@@ -46,6 +46,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modul
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
+# bcryptjs e usado pelo seed standalone (Next standalone bundla inline pra app
+# mas o pacote nao fica disponivel pra `node prisma/seed.js`)
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bcryptjs ./node_modules/bcryptjs
+
 # Recria o symlink .bin/prisma -> ../prisma/build/index.js (COPY de arquivo unico
 # deferencia symlink; sem isso, __dirname resolve pra .bin/ e o CLI nao acha
 # prisma_schema_build_bg.wasm que vive em prisma/build/)
