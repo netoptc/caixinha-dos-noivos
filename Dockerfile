@@ -44,8 +44,14 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+
+# Recria o symlink .bin/prisma -> ../prisma/build/index.js (COPY de arquivo unico
+# deferencia symlink; sem isso, __dirname resolve pra .bin/ e o CLI nao acha
+# prisma_schema_build_bg.wasm que vive em prisma/build/)
+RUN mkdir -p /app/node_modules/.bin \
+ && ln -sf ../prisma/build/index.js /app/node_modules/.bin/prisma \
+ && chown -h nextjs:nodejs /app/node_modules/.bin/prisma
 
 # Estrutura de uploads (bind mount cobre isso em runtime, mas garante existência)
 RUN mkdir -p /app/public/uploads/videos /app/public/uploads/images \
