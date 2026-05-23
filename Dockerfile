@@ -39,14 +39,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Garante que o Prisma client e a engine para musl estejam disponíveis em runtime
+# Garante que o Prisma client, CLI e engines estejam disponíveis em runtime
+# (client pra app rodar; CLI + engines pra `prisma migrate deploy` rodar nesta imagem)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma/client ./node_modules/@prisma/client
-
-# Copia o schema e o CLI prisma para permitir `prisma migrate deploy` neste mesmo runtime
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 # Estrutura de uploads (bind mount cobre isso em runtime, mas garante existência)
 RUN mkdir -p /app/public/uploads/videos /app/public/uploads/images \
