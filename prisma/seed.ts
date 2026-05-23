@@ -6,26 +6,37 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Seeding database...");
 
-  // Create admin user
-  const adminPassword = await bcrypt.hash("admin123", 12);
+  const adminEmail = process.env.ADMIN_EMAIL?.trim();
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminEmail || !adminPassword) {
+    console.log(
+      "⚠️  ADMIN_EMAIL/ADMIN_PASSWORD não definidos — pulando criação do admin.",
+    );
+    console.log(
+      "   Para criar o admin, rode: ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run db:seed",
+    );
+    return;
+  }
+
+  if (adminPassword.length < 12) {
+    throw new Error("ADMIN_PASSWORD deve ter pelo menos 12 caracteres.");
+  }
+
+  const passwordHash = await bcrypt.hash(adminPassword, 12);
   const admin = await prisma.user.upsert({
-    where: { email: "admin@caixinhadosnoivos.com.br" },
-    update: { role: "ADMIN" },
+    where: { email: adminEmail },
+    update: { role: "ADMIN", password: passwordHash },
     create: {
-      email: "admin@caixinhadosnoivos.com.br",
-      password: adminPassword,
+      email: adminEmail,
+      password: passwordHash,
       name: "Administrador",
       role: "ADMIN",
     },
   });
 
-  console.log("✅ Created admin user:", admin.email);
-
-  console.log("\n🎉 Seed completed!");
-  console.log("\n🛡️  Admin login: admin@caixinhadosnoivos.com.br");
-  console.log("🔑 Admin password: admin123");
-  console.log("🔗 Admin panel: http://localhost:3000/admin");
-  console.log("\n🔗 Demo page (estática): http://localhost:3000/demo");
+  console.log(`✅ Admin garantido: ${admin.email}`);
+  console.log("🎉 Seed concluído.");
 }
 
 main()

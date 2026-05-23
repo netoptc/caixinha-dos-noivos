@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, typecheck e build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build (Next.js)
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          # Build do Next nao precisa de DB de verdade — placeholder valido
+          DATABASE_URL: "postgresql://user:pass@localhost:5432/db?schema=public"
+          NEXTAUTH_SECRET: "ci-placeholder-secret-not-used-at-runtime"
+          NEXTAUTH_URL: "http://localhost:3000"

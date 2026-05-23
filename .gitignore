@@ -40,8 +40,6 @@ next-env.d.ts
 # uploads
 /public/uploads
 
-# prisma
-prisma/migrations/
 
 # IDE
 .vscode/
