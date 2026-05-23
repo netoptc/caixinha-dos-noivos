@@ -1,0 +1,313 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   DESIGN TOKENS — Romântico Editorial
+   Edite APENAS esta seção para ajustar a identidade
+   Conversor hex → HSL: https://www.colorhexa.com/
+   ============================================================
+
+   PALETA principal:
+   - Marfim   #FBF7EE  →  38 55% 96%   (background)
+   - Tinta    #2C2418  →  30 26% 13%   (foreground)
+   - Dourado  #B8851F  →  41 71% 42%   (primary)
+   - Creme    #EDE0C0  →  41 56% 84%   (secondary)
+   - Musgo    #4A5C44  →  111 14% 31%  (accent)
+   ============================================================ */
+
+@layer base {
+  :root {
+    --background: 38 55% 96%;
+    --foreground: 30 26% 13%;
+    --card: 38 50% 98%;
+    --card-foreground: 30 26% 13%;
+    --popover: 38 55% 97%;
+    --popover-foreground: 30 26% 13%;
+
+    /* ↓↓↓ TROQUE AQUI AS CORES PRINCIPAIS ↓↓↓ */
+    --primary: 41 71% 42%;             /* #B8851F dourado profundo */
+    --primary-foreground: 38 55% 96%;  /* marfim sobre dourado */
+    --secondary: 41 56% 84%;           /* #EDE0C0 creme */
+    --secondary-foreground: 30 35% 18%;
+    --accent: 111 14% 31%;             /* #4A5C44 verde-musgo */
+    --accent-foreground: 38 55% 96%;
+    /* ↑↑↑ ---------------------------------- ↑↑↑ */
+
+    --muted: 38 32% 92%;
+    --muted-foreground: 30 12% 38%;
+    --destructive: 6 64% 42%;
+    --destructive-foreground: 38 55% 96%;
+    --border: 38 22% 84%;
+    --input: 38 22% 80%;
+    --ring: 41 71% 42%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 30 22% 8%;
+    --foreground: 38 35% 92%;
+    --card: 30 22% 11%;
+    --card-foreground: 38 35% 92%;
+    --popover: 30 22% 10%;
+    --popover-foreground: 38 35% 92%;
+
+    --primary: 41 65% 58%;             /* champagne em dark */
+    --primary-foreground: 30 30% 8%;
+    --secondary: 30 15% 18%;
+    --secondary-foreground: 38 30% 88%;
+    --accent: 111 12% 48%;
+    --accent-foreground: 38 35% 95%;
+
+    --muted: 30 18% 14%;
+    --muted-foreground: 38 15% 62%;
+    --destructive: 6 55% 50%;
+    --destructive-foreground: 38 35% 95%;
+    --border: 30 18% 20%;
+    --input: 30 18% 22%;
+    --ring: 41 65% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "ss01", "cv11", "rlig" 1, "calt" 1;
+  }
+  /* Hierarquia editorial padrão para títulos */
+  h1, h2, h3, h4 {
+    @apply font-display;
+    font-feature-settings: "ss01", "salt";
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* ============================================================
+   UTILITÁRIOS EDITORIAIS
+   ============================================================ */
+
+/* Linha fina dourada com texto centrado: "━━━━ Nº 042 ━━━━" */
+.editorial-rule {
+  @apply flex items-center gap-4 text-[0.7rem] tracking-editorial uppercase font-sans text-primary/80;
+}
+.editorial-rule::before,
+.editorial-rule::after {
+  content: "";
+  @apply h-px flex-1 bg-primary/40;
+}
+
+/* Aspas serifadas decorativas em destaque */
+.editorial-quote {
+  @apply relative font-display italic;
+}
+.editorial-quote::before {
+  content: "\201C";
+  @apply absolute -left-6 -top-4 text-5xl text-primary/30 font-display not-italic leading-none select-none;
+}
+
+/* Overlay de noise sutil — usado em backgrounds editoriais */
+.grain {
+  position: relative;
+}
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Máscara de fade para imagens estilo editorial (bottom fade) */
+.fade-mask {
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+          mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+}
+.fade-mask-r {
+  -webkit-mask-image: linear-gradient(to right, black 70%, transparent 100%);
+          mask-image: linear-gradient(to right, black 70%, transparent 100%);
+}
+
+/* Numeração editorial (Nº 01, Nº 042 …) */
+.editorial-number {
+  @apply font-sans uppercase tracking-editorial text-[0.7rem] text-primary;
+}
+
+/* Botão editorial — borda dupla fina, texto tracking-widest */
+.btn-editorial {
+  @apply inline-flex items-center justify-center gap-2 px-8 py-3
+         font-sans uppercase tracking-editorial text-xs
+         border border-primary text-primary
+         transition-colors duration-300;
+  box-shadow: inset 0 0 0 1px hsl(var(--background)), inset 0 0 0 2px hsl(var(--primary));
+}
+.btn-editorial:hover {
+  @apply bg-primary text-primary-foreground;
+  box-shadow: inset 0 0 0 1px hsl(var(--primary)), inset 0 0 0 2px hsl(var(--primary));
+}
+.btn-editorial[disabled] {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Input estilo editorial: underline only, label flutuante */
+.input-editorial {
+  @apply w-full bg-transparent border-0 border-b border-input
+         px-0 py-2 font-sans text-base text-foreground
+         placeholder:text-muted-foreground/60
+         focus:outline-none focus:border-primary focus:ring-0
+         transition-colors;
+}
+.input-editorial:focus,
+.input-editorial:not(:placeholder-shown) {
+  @apply border-primary;
+}
+
+.label-editorial {
+  @apply font-sans uppercase tracking-editorial text-[0.65rem] text-muted-foreground;
+}
+
+/* ============================================================
+   ESTILOS LEGADOS / ESPECÍFICOS DE PÁGINA
+   ============================================================ */
+
+/* Caixinha page theming — herda a cor primária do tema do casal */
+.brand-theme {
+  --brand-primary: hsl(var(--primary));
+  --brand-secondary: hsl(var(--secondary));
+}
+
+/* Progress bar shimmer */
+.progress-bar-animated {
+  background: linear-gradient(
+    90deg,
+    var(--brand-primary) 0%,
+    color-mix(in srgb, var(--brand-primary) 78%, white) 50%,
+    var(--brand-primary) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2.4s linear infinite;
+}
+
+/* ===== Animações da barra de arrecadação ===== */
+@keyframes shimmer {
+  from { background-position: 0 0; }
+  to { background-position: -200% 0; }
+}
+
+@keyframes progress-stripes {
+  from { background-position: 0 0; }
+  to { background-position: 20px 20px; }
+}
+
+/* Loop perfeito: translateX por 1 período diagonal exato (14 × √2 ≈ 19.799px) — da esquerda pra direita */
+@keyframes progress-stripes-translate {
+  from { transform: translateX(0); }
+  to { transform: translateX(19.799px); }
+}
+
+@keyframes progress-pulse {
+  0%, 100% { opacity: 0.88; }
+  50% { opacity: 1; }
+}
+
+@keyframes progress-sweep {
+  0% { transform: translateX(-120%) skewX(-12deg); }
+  60%, 100% { transform: translateX(220%) skewX(-12deg); }
+}
+
+.progress-fill-active {
+  animation:
+    progress-stripes 1.2s linear infinite,
+    progress-pulse 2s ease-in-out infinite;
+}
+
+.progress-fill-pulse {
+  animation: progress-pulse 2s ease-in-out infinite;
+}
+
+.progress-fill-stripes {
+  animation: progress-stripes 1.2s linear infinite;
+}
+
+/* Camada de listras 45° deslizando na horizontal (efeito "loading") */
+.progress-stripes-h {
+  animation: progress-stripes-translate 1.2s linear infinite;
+}
+
+.progress-sweep-active {
+  animation: progress-sweep 2.6s ease-in-out infinite;
+}
+
+/* Gradient text (mais sutil — para uso ocasional) */
+.gradient-text {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent) / 0.8));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Hero pattern — losango pontilhado dourado sutil */
+.hero-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23B8851F' fill-opacity='0.07'%3E%3Ccircle cx='16' cy='16' r='1'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Card hover sutil */
+.card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px -10px hsl(var(--primary) / 0.18);
+}
+
+/* Input focus ring (compatibilidade com componentes shadcn antigos) */
+.input-focus {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary;
+}
+
+/* Couple pages — neutros para acomodar cores dinâmicas do casal */
+.couple-page {
+  --foreground: 30 14% 14%;
+  --muted-foreground: 30 8% 42%;
+  --muted: 30 12% 95%;
+  --border: 30 10% 86%;
+  --input: 30 10% 84%;
+  --card-foreground: 30 14% 14%;
+}
+
+/* Donation page — inputs seguem cor primária do casal */
+.donation-page input:focus-visible,
+.donation-page textarea:focus-visible {
+  border-color: var(--brand-primary) !important;
+  box-shadow: 0 0 0 3px var(--brand-secondary) !important;
+  outline: none !important;
+}
+
+/* Decorative brand element (mantido) */
+.tie-shape {
+  clip-path: polygon(50% 0%, 65% 30%, 100% 35%, 75% 60%, 80% 100%, 50% 80%, 20% 100%, 25% 60%, 0% 35%, 35% 30%);
+}

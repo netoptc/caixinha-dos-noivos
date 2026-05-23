@@ -1,0 +1,148 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  name      String
+  role      UserRole  @default(USER)
+
+  // Asaas sub-account references (kept for legacy integration paths)
+  asaasAccountId String? @unique
+  asaasWalletId  String? @unique
+  asaasApiKey    String?
+
+  caixinha       Caixinha?
+  withdrawals    Withdrawal[]
+  passwordResets PasswordReset[]
+  createdAt      DateTime     @default(now())
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum PixKeyType {
+  CPF
+  EMAIL
+  PHONE
+  EVP
+}
+
+model Caixinha {
+  id             String     @id @default(cuid())
+  slug           String     @unique
+  title          String
+  coupleNames    String
+  weddingDate    DateTime?
+  goalAmount     Decimal    @db.Decimal(10, 2)
+  raisedAmount   Decimal    @default(0) @db.Decimal(10, 2)
+  primaryColor   String     @default("#D4A017")
+  coverImageUrl  String?
+  coupleImageUrl String?
+  description    String?
+  isActive       Boolean    @default(true)
+  hideDonorAmount   Boolean @default(true)
+  hideTotalRaised   Boolean @default(false)
+  hideGoal          Boolean @default(false)
+  userId         String     @unique
+  user           User       @relation(fields: [userId], references: [id])
+  donations      Donation[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model Donation {
+  id              String        @id @default(cuid())
+  donorName       String
+  donorPhone      String
+  amount          Decimal       @db.Decimal(10, 2)
+  feePercent      Decimal       @db.Decimal(5, 4)
+  feeAmount       Decimal       @db.Decimal(10, 2)
+  totalAmount     Decimal       @db.Decimal(10, 2)
+  message         String?
+  videoUrl        String?
+  photoUrl        String?
+  paymentMethod   PaymentMethod
+  paymentStatus   PaymentStatus @default(PENDING)
+  paymentId       String?
+  installments    Int           @default(1)
+
+  // Asaas integration
+  asaasPaymentId  String?       @unique
+  asaasInvoiceUrl String?
+  pixQrCode       String?
+  pixQrCodeImage  String?
+  // Date Asaas liquidates the payment to the master account balance.
+  // For PIX: ~D+1. For credit card: D+32 (per parcel). Populated by webhook.
+  creditDate      DateTime?
+
+  caixinhaId      String
+  caixinha        Caixinha      @relation(fields: [caixinhaId], references: [id])
+  createdAt       DateTime      @default(now())
+}
+
+enum PaymentMethod {
+  PIX
+  CREDIT_CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  REFUNDED
+}
+
+model Withdrawal {
+  id               String           @id @default(cuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id])
+  amount           Decimal          @db.Decimal(10, 2)
+  // Snapshot dos dados informados pelo casal no momento do saque.
+  // O User não armazena esses dados — cada saque é independente.
+  holderCpf        String?
+  pixKey           String
+  pixKeyType       PixKeyType
+  asaasTransferId  String?          @unique
+  status           WithdrawalStatus @default(PENDING)
+  failureReason    String?
+  // True when this withdrawal triggered an Asaas anticipation of pending parcels.
+  anticipated      Boolean          @default(false)
+  // Asaas anticipation fee deducted from the gross value (only set when anticipated=true).
+  anticipationFee  Decimal          @default(0) @db.Decimal(10, 2)
+  createdAt        DateTime         @default(now())
+  completedAt      DateTime?
+
+  @@index([userId, createdAt])
+}
+
+enum WithdrawalStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}

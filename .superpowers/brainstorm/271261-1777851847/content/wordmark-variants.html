@@ -1,0 +1,244 @@
+<style>
+  .stage {
+    background: #fbf7ee;
+    border: 1px solid rgba(184, 133, 31, 0.15);
+    border-radius: 12px;
+    padding: 36px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 140px;
+    margin: 0;
+  }
+  .ff-display { font-family: 'Fraunces', Georgia, serif; }
+  .ff-script  { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; }
+  .gold { color: #b8851f; }
+  .ink  { color: #1f190f; }
+
+  /* Variant 1: "i" gold italic accent + rule */
+  .v1 .main {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 500;
+    font-size: 2.2rem;
+    letter-spacing: -0.025em;
+    color: #1f190f;
+    line-height: 1;
+  }
+  .v1 .main em {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    color: #b8851f;
+  }
+  .v1 .rule {
+    width: 60%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(184,133,31,0.5), transparent);
+    margin: 10px auto;
+  }
+  .v1 .sub {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    letter-spacing: 0.32em;
+    color: rgba(31,25,15,0.55);
+    text-transform: uppercase;
+  }
+
+  /* Variant 2: ornament ampersand between lines */
+  .v2 .main {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 500;
+    font-size: 2.2rem;
+    letter-spacing: -0.025em;
+    color: #1f190f;
+    line-height: 1;
+  }
+  .v2 .ornament {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    color: #b8851f;
+    font-size: 1.5rem;
+    margin: 6px 0;
+    line-height: 1;
+  }
+  .v2 .sub {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    letter-spacing: 0.32em;
+    color: rgba(31,25,15,0.55);
+    text-transform: uppercase;
+  }
+
+  /* Variant 3: drop-cap "C" gold ligature / swash */
+  .v3 .main {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 500;
+    font-size: 2.2rem;
+    letter-spacing: -0.03em;
+    color: #1f190f;
+    line-height: 1;
+    display: inline-flex;
+    align-items: baseline;
+  }
+  .v3 .main .swash {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    color: #b8851f;
+    font-size: 2.6rem;
+    margin-right: 1px;
+    line-height: 1;
+  }
+  .v3 .sub {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    letter-spacing: 0.32em;
+    color: rgba(31,25,15,0.55);
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  /* size demos */
+  .size-row {
+    display: flex; align-items: center; gap: 24px;
+    background: #fbf7ee; padding: 18px 24px; border-radius: 8px;
+    border: 1px solid rgba(184,133,31,0.12);
+    margin-top: 10px;
+  }
+  .size-label {
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(31,25,15,0.5);
+    min-width: 70px;
+  }
+  /* small navbar version */
+  .nav-mini {
+    font-family: 'Fraunces', serif; font-weight:500;
+    font-size: 1rem; letter-spacing: -0.015em; color:#1f190f;
+    display:inline-flex; align-items:baseline; gap:6px;
+  }
+  .nav-mini em { font-family: 'Fraunces', serif; font-style: italic; font-weight: 400; color:#b8851f; }
+  .nav-mini .dot { width: 3px; height: 3px; border-radius: 50%; background: #b8851f; opacity: 0.7; align-self: center; }
+  .nav-mini-sub {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    color: rgba(31,25,15,0.55);
+    text-transform: uppercase;
+  }
+
+  /* favicon */
+  .favicon {
+    width: 32px; height: 32px;
+    background: #fbf7ee;
+    border: 1px solid rgba(184,133,31,0.25);
+    border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif; font-style: italic; font-weight: 500;
+    font-size: 1.2rem; color: #b8851f; line-height: 1;
+  }
+  .favicon-lg {
+    width: 64px; height: 64px;
+    background: #1f190f;
+    border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif; font-style: italic; font-weight: 500;
+    font-size: 2.3rem; color: #b8851f; line-height: 1;
+  }
+</style>
+
+<h2>Wordmark editorial — 3 variações de detalhe</h2>
+<p class="subtitle">Mesma direção (só tipografia, sem ícone), mas com 3 ornamentações diferentes. Clica na que tem o "tempero" certo.</p>
+
+<div class="cards">
+  <!-- V1 -->
+  <div class="card" data-choice="v1-rule" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0">
+      <div class="stage v1">
+        <span class="main">Ca<em>i</em>xinha</span>
+        <div class="rule"></div>
+        <span class="sub">dos noivos</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>1 · "i" italic + fio dourado</h3>
+      <p>Acento dourado no "i" itálico (cria um piscar editorial) com fio horizontal sutil separando linhas. Versão mais "revista de casamento clássica".</p>
+    </div>
+  </div>
+
+  <!-- V2 -->
+  <div class="card" data-choice="v2-amp" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0">
+      <div class="stage v2">
+        <span class="main">Caixinha</span>
+        <span class="ornament">&amp;</span>
+        <span class="sub">dos noivos</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>2 · Ampersand dourado central</h3>
+      <p>Substitui o fio por um <strong>&amp;</strong> em Cormorant itálico dourado — ornamento clássico de tipografia de convite ("Maria & João"). Mais romântico.</p>
+    </div>
+  </div>
+
+  <!-- V3 -->
+  <div class="card" data-choice="v3-swash" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0">
+      <div class="stage v3">
+        <span class="main"><span class="swash">C</span>aixinha</span>
+        <span class="sub" style="margin-top:8px">dos noivos</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>3 · "C" capitular com swash</h3>
+      <p>"C" inicial em Fraunces itálico dourado, ligeiramente maior — vira drop-cap. Sem fio nem ornamento, mais limpo. <em>O "C" sozinho vira favicon natural.</em></p>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top: 48px;">Como escala em cada contexto</h3>
+<p class="subtitle">(Mostrando a variação 1 como referência — qualquer uma das três escala da mesma forma)</p>
+
+<div class="size-row">
+  <span class="size-label">Hero<br>(landing)</span>
+  <div class="v1" style="display:flex; flex-direction:column; align-items:flex-start;">
+    <span class="main" style="font-size: 2.6rem">Ca<em>i</em>xinha</span>
+    <div class="rule" style="width: 100%"></div>
+    <span class="sub">dos noivos</span>
+  </div>
+</div>
+
+<div class="size-row">
+  <span class="size-label">Navbar<br>(default)</span>
+  <div style="display:flex; flex-direction:column; line-height: 1;">
+    <span class="nav-mini">Ca<em>i</em>xinha</span>
+    <span class="nav-mini-sub" style="margin-top: 4px">dos noivos</span>
+  </div>
+</div>
+
+<div class="size-row">
+  <span class="size-label">Mobile<br>compacto</span>
+  <span class="nav-mini" style="font-size:0.95rem">Ca<em>i</em>xinha</span>
+  <span style="font-family:'Manrope',sans-serif; font-size:0.7rem; color:rgba(31,25,15,0.4)">(linha "dos noivos" suprimida em &lt; 380px)</span>
+</div>
+
+<div class="size-row">
+  <span class="size-label">Favicon</span>
+  <div class="favicon">i</div>
+  <span style="font-family:'Manrope',sans-serif; font-size:0.7rem; color:rgba(31,25,15,0.55)">light — só o "i" itálico dourado em marfim</span>
+  <div class="favicon-lg" style="margin-left:auto">i</div>
+  <span style="font-family:'Manrope',sans-serif; font-size:0.7rem; color:rgba(31,25,15,0.55)">dark — "i" dourado em fundo tinta escura</span>
+</div>
+
+<div style="margin-top: 32px; padding: 20px; background: rgba(184,133,31,0.05); border-radius: 8px; border-left: 3px solid #b8851f;">
+  <p style="font-family:'Manrope', sans-serif; font-size: 0.85rem; color: rgba(31,25,15,0.75); margin:0;">
+    <strong>Minha recomendação:</strong> variação <strong>2 · Ampersand dourado</strong>. O <strong>&amp;</strong> é o ornamento mais icônico de papelaria de casamento e cria um foco visual sem precisar de fio. Para favicon, uso o próprio <strong>&amp;</strong> em Cormorant itálico dourado.
+  </p>
+</div>

@@ -1,0 +1,395 @@
+"use client";
+
+import { useEffect, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
+import { X, ChevronLeft, ChevronRight, Play, Heart, Download, Volume2, VolumeX } from "lucide-react";
+import { formatWeddingDate } from "@/lib/utils";
+
+interface VideoItem {
+  id: string;
+  donorName: string;
+  amount: number;
+  videoUrl: string;
+}
+
+interface VideoModalProps {
+  videos: VideoItem[];
+  initialIndex?: number;
+  primaryColor?: string;
+  coupleNames?: string;
+  /** ISO string da data do casamento — exibida abaixo do nome dos noivos */
+  weddingDate?: string | null;
+  /** Quando true, exibe o botão de baixar vídeo. Use apenas no painel dos noivos. */
+  canDownload?: boolean;
+  onClose: () => void;
+}
+
+export function VideoModal({
+  videos,
+  initialIndex = 0,
+  primaryColor = "#D4A017",
+  coupleNames,
+  weddingDate,
+  canDownload = false,
+  onClose,
+}: VideoModalProps) {
+  const [index, setIndex] = useState(initialIndex);
+  const [progress, setProgress] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [downloadLoading, setDownloadLoading] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Garante que portal só rende no client (não SSR)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const current = videos[index];
+
+  const goNext = useCallback(() => {
+    if (index < videos.length - 1) {
+      setIndex((i) => i + 1);
+      setProgress(0);
+    } else {
+      onClose();
+    }
+  }, [index, videos.length, onClose]);
+
+  const goPrev = useCallback(() => {
+    if (index > 0) {
+      setIndex((i) => i - 1);
+      setProgress(0);
+    }
+  }, [index]);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft") goPrev();
+    };
+    document.addEventListener("keydown", handleKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose, goNext, goPrev]);
+
+  useEffect(() => {
+    setProgress(0);
+    setPaused(false);
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    let rafId = 0;
+    const tick = () => {
+      const dur = video.duration;
+      if (dur && isFinite(dur)) {
+        setProgress((video.currentTime / dur) * 100);
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+
+    const handleEnded = () => {
+      setProgress(100);
+      setTimeout(goNext, 300);
+    };
+
+    video.addEventListener("ended", handleEnded);
+    // Garante autoplay imediato — muted é obrigatório pra navegadores não bloquearem.
+    video.muted = true;
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(() => {});
+    }
+
+    rafId = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      video.removeEventListener("ended", handleEnded);
+    };
+  }, [index, goNext]);
+
+  function toggleMute(e: React.MouseEvent) {
+    e.stopPropagation();
+    const video = videoRef.current;
+    if (!video) return;
+    const next = !muted;
+    video.muted = next;
+    setMuted(next);
+    if (!next && video.paused) {
+      video.play().catch(() => {});
+      setPaused(false);
+    }
+  }
+
+  async function handleDownload(e?: React.MouseEvent) {
+    e?.stopPropagation();
+    if (downloadLoading) return;
+    setDownloadLoading(true);
+
+    try {
+      const res = await fetch(current.videoUrl);
+      if (!res.ok) throw new Error(`fetch ${res.status}`);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      const ext = blob.type.includes("webm") ? "webm" : "mp4";
+      a.download = `caixinha-${current.donorName.replace(/\s+/g, "-").toLowerCase()}-${current.id}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+    } catch (err) {
+      console.error("download error:", err);
+    } finally {
+      setDownloadLoading(false);
+    }
+  }
+
+  function togglePause() {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play();
+      setPaused(false);
+    } else {
+      video.pause();
+      setPaused(true);
+    }
+  }
+
+  const initials = current.donorName
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+
+  if (!mounted) return null;
+
+  const modal = (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      style={{
+        // Fundo cheio na cor do casal — gradient suave do tom escolhido
+        background: `linear-gradient(160deg, ${primaryColor} 0%, ${primaryColor}dd 50%, ${primaryColor}aa 100%)`,
+      }}
+      onClick={onClose}
+    >
+      {/* Textura sutil de pontos brancos sobre o fundo */}
+      <div
+        className="absolute inset-0 opacity-15 pointer-events-none"
+        style={{
+          backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`,
+          backgroundSize: "32px 32px",
+        }}
+      />
+
+      {/* Glow ambiente */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse at top, rgba(255,255,255,0.12) 0%, transparent 60%)`,
+        }}
+      />
+
+      <div
+        className="relative flex flex-col overflow-hidden"
+        style={{
+          width: "min(100vw, 400px)",
+          height: "min(100dvh, 760px)",
+          borderRadius: "24px",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+
+        {/* ── TOP: progress bars + nome do casal + ações ── */}
+        <div className="relative z-20 px-4 pt-4 flex-shrink-0">
+          {/* Progress bars */}
+          <div className="flex gap-1 mb-4">
+            {videos.map((s, i) => (
+              <div
+                key={s.id}
+                className="flex-1 h-0.5 rounded-full overflow-hidden bg-white/25"
+              >
+                <div
+                  className="h-full rounded-full bg-white"
+                  style={{
+                    width: i < index ? "100%" : i === index ? `${progress}%` : "0%",
+                    transition: i === index ? "none" : undefined,
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Header: contador (esq) e ações (dir) */}
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-white/70 text-[0.7rem] font-medium tracking-wider uppercase">
+              {index + 1} de {videos.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={toggleMute}
+                className="w-9 h-9 flex items-center justify-center text-white/80 hover:text-white rounded-full hover:bg-white/15 transition-colors"
+                aria-label={muted ? "Ativar som" : "Desativar som"}
+                title={muted ? "Ativar som" : "Desativar som"}
+              >
+                {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+              </button>
+              {canDownload && (
+                <button
+                  onClick={handleDownload}
+                  disabled={downloadLoading}
+                  className="w-9 h-9 flex items-center justify-center text-white/80 hover:text-white rounded-full hover:bg-white/15 transition-colors relative disabled:opacity-60"
+                  aria-label="Baixar mídia"
+                  title="Baixar mídia"
+                >
+                  {downloadLoading ? (
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Download className="w-5 h-5" />
+                  )}
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="w-9 h-9 flex items-center justify-center text-white/80 hover:text-white rounded-full hover:bg-white/15 transition-colors"
+                aria-label="Fechar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Nome do casal — centralizado, em destaque */}
+          {coupleNames && (
+            <div className="text-center mb-2">
+              <h2
+                className="text-white text-2xl font-semibold leading-tight"
+                style={{
+                  fontFamily: "Georgia, serif",
+                  textShadow: "0 2px 12px rgba(0,0,0,0.25)",
+                }}
+              >
+                {coupleNames}
+              </h2>
+              {weddingDate && (
+                <p
+                  className="text-white/85 text-[11px] font-medium mt-1 uppercase tracking-[0.18em]"
+                  style={{ textShadow: "0 1px 8px rgba(0,0,0,0.25)" }}
+                >
+                  {formatWeddingDate(weddingDate)}
+                </p>
+              )}
+              <div
+                className="mx-auto mt-1.5 h-px w-12 bg-white/40"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* ── MEIO: vídeo ── */}
+        <div className="relative z-10 flex-1 px-4 pt-2 pb-3 min-h-0">
+          <div
+            className="relative w-full h-full overflow-hidden"
+            style={{
+              borderRadius: "20px",
+              border: "2px solid rgba(255,255,255,0.5)",
+              boxShadow:
+                "0 0 32px rgba(255,255,255,0.15), 0 20px 50px rgba(0,0,0,0.25)",
+            }}
+          >
+            <video
+              key={current.id}
+              ref={videoRef}
+              src={current.videoUrl}
+              className="w-full h-full object-cover cursor-pointer"
+              autoPlay
+              playsInline
+              muted={muted}
+              onClick={togglePause}
+            />
+            {paused && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-sm"
+                  style={{ background: `${primaryColor}99` }}
+                >
+                  <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+                </div>
+              </div>
+            )}
+
+            {/* Tap zones */}
+            <button
+              className="absolute left-0 top-0 bottom-0 w-1/3 z-10"
+              onClick={(e) => { e.stopPropagation(); goPrev(); }}
+              aria-label="Anterior"
+            />
+            <button
+              className="absolute right-0 top-0 bottom-0 w-1/3 z-10"
+              onClick={(e) => { e.stopPropagation(); goNext(); }}
+              aria-label="Próximo"
+            />
+          </div>
+        </div>
+
+        {/* ── BAIXO: perfil do doador + logo da plataforma ── */}
+        <div className="relative z-20 flex-shrink-0 px-4 pb-4 flex flex-col items-center gap-3">
+          {/* Doador */}
+          <div className="flex items-center gap-2.5 px-3 py-2 rounded-full bg-white/15 backdrop-blur-md border border-white/20 max-w-full">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs flex-shrink-0 bg-white"
+              style={{ color: primaryColor }}
+            >
+              {initials}
+            </div>
+            <p className="text-white font-medium text-sm leading-tight truncate pr-1">
+              {current.donorName}
+            </p>
+          </div>
+
+          {/* Logo Caixinha dos Noivos */}
+          <div className="flex items-center gap-1.5 opacity-70">
+            <Heart
+              className="w-3 h-3 text-white"
+              fill="currentColor"
+            />
+            <span className="text-white text-[0.65rem] font-medium tracking-wider uppercase">
+              Caixinha dos Noivos
+            </span>
+          </div>
+        </div>
+
+        {/* Desktop arrows */}
+        {index > 0 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); goPrev(); }}
+            className="absolute left-[-52px] top-1/2 -translate-y-1/2 z-20 hidden md:flex w-10 h-10 items-center justify-center rounded-full bg-white/20 hover:bg-white/35 text-white transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        )}
+        {index < videos.length - 1 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); goNext(); }}
+            className="absolute right-[-52px] top-1/2 -translate-y-1/2 z-20 hidden md:flex w-10 h-10 items-center justify-center rounded-full bg-white/20 hover:bg-white/35 text-white transition-colors"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  // Portal direto pra body — escapa de qualquer stacking context dos pais
+  return createPortal(modal, document.body);
+}

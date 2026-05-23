@@ -1,0 +1,118 @@
+<style>
+  .stage {
+    background: #fbf7ee;
+    border: 1px solid rgba(184, 133, 31, 0.15);
+    border-radius: 12px;
+    padding: 64px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+  .logo-current {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-current .box {
+    width: 36px; height: 36px;
+    border-radius: 12px;
+    background: #b8851f;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+  }
+  .logo-current .stack { display: flex; flex-direction: column; line-height: 1; }
+  .logo-current .primary {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+    color: #1f190f;
+  }
+  .logo-current .script {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    color: rgba(31, 25, 15, 0.65);
+    margin-top: 2px;
+  }
+  .palette {
+    display: flex; gap: 8px; justify-content: center; margin-top: 20px;
+  }
+  .swatch {
+    width: 40px; height: 40px; border-radius: 8px;
+    display: flex; align-items: flex-end; justify-content: center;
+    font-size: 0.6rem; color: rgba(31,25,15,0.6); padding-bottom: 4px;
+    font-family: 'Manrope', sans-serif;
+  }
+</style>
+
+<h2>Logo atual da Caixinha dos Noivos</h2>
+<p class="subtitle">Ícone genérico de presente (lucide) + bloco dourado + tipografia. Identidade do projeto é editorial/wedding (Fraunces serif, Cormorant script, paleta dourado profundo + marfim + verde-musgo)</p>
+
+<div class="stage">
+  <div class="logo-current">
+    <div class="box">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="8" width="18" height="4" rx="1"/>
+        <path d="M12 8v13"/>
+        <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/>
+        <path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8"/>
+        <path d="M16.5 8a2.5 2.5 0 0 0 0-5C13 3 12 8 12 8"/>
+      </svg>
+    </div>
+    <div class="stack">
+      <span class="primary">Caixinha</span>
+      <span class="script">dos Noivos</span>
+    </div>
+  </div>
+</div>
+
+<div class="palette">
+  <div class="swatch" style="background:#b8851f;color:#fff">#B8851F</div>
+  <div class="swatch" style="background:#fbf7ee">#FBF7EE</div>
+  <div class="swatch" style="background:#4a5c44;color:#fff">#4A5C44</div>
+  <div class="swatch" style="background:#1f190f;color:#fff">#1F190F</div>
+</div>
+
+<h3 style="margin-top: 40px;">O que mais te incomoda no logo atual?</h3>
+<p class="subtitle">Selecione o que mais te incomoda — pode escolher mais de um</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="generic-icon" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Ícone genérico de presente</h3>
+      <p>Caixa de presente é um clichê — não conta a história de "caixinha dos noivos" / casamento</p>
+    </div>
+  </div>
+  <div class="option" data-choice="techy-block" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Bloco quadrado parece "app de tech"</h3>
+      <p>Square dourado destoa da estética editorial sofisticada (serif, marfim, ouro)</p>
+    </div>
+  </div>
+  <div class="option" data-choice="no-personality" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Falta personalidade / alma</h3>
+      <p>Nada remete a casamento, união, amor, monograma ou tradição</p>
+    </div>
+  </div>
+  <div class="option" data-choice="typography" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Hierarquia tipográfica</h3>
+      <p>"Caixinha" + "dos Noivos" empilhados não funciona — fica abafado</p>
+    </div>
+  </div>
+  <div class="option" data-choice="all" onclick="toggleSelect(this)">
+    <div class="letter">E</div>
+    <div class="content">
+      <h3>Tudo — quero repensar do zero</h3>
+      <p>Direção totalmente nova</p>
+    </div>
+  </div>
+</div>

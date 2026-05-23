@@ -1,0 +1,199 @@
+<style>
+  .stage {
+    background: #fbf7ee;
+    border: 1px solid rgba(184, 133, 31, 0.15);
+    border-radius: 12px;
+    padding: 40px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;     /* <-- left aligned */
+    justify-content: center;
+    min-height: 140px;
+    margin: 0;
+  }
+
+  /* Variant 1: "i" gold italic accent + thin rule */
+  .v1 .main {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 500;
+    font-size: 2.2rem;
+    letter-spacing: -0.025em;
+    color: #1f190f;
+    line-height: 1;
+  }
+  .v1 .main em {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    color: #b8851f;
+  }
+  .v1 .rule {
+    width: 80px;
+    height: 1px;
+    background: linear-gradient(to right, rgba(184,133,31,0.7), transparent);
+    margin: 8px 0 6px 0;
+  }
+  .v1 .sub {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 0.78rem;          /* <-- smaller */
+    letter-spacing: 0.28em;
+    color: #b8851f;              /* <-- gold */
+    text-transform: uppercase;
+    text-align: left;
+  }
+
+  /* Variant 2: ampersand */
+  .v2 .main {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 500;
+    font-size: 2.2rem;
+    letter-spacing: -0.025em;
+    color: #1f190f;
+    line-height: 1;
+  }
+  .v2 .ornament {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    color: #b8851f;
+    font-size: 1.25rem;
+    margin: 4px 0 4px 2px;
+    line-height: 1;
+  }
+  .v2 .sub {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 0.78rem;
+    letter-spacing: 0.28em;
+    color: #b8851f;
+    text-transform: uppercase;
+  }
+
+  /* Variant 3: drop-cap "C" */
+  .v3 .main {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 500;
+    font-size: 2.2rem;
+    letter-spacing: -0.03em;
+    color: #1f190f;
+    line-height: 1;
+    display: inline-flex;
+    align-items: baseline;
+  }
+  .v3 .main .swash {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    color: #b8851f;
+    font-size: 2.6rem;
+    margin-right: 1px;
+    line-height: 1;
+  }
+  .v3 .sub {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 0.78rem;
+    letter-spacing: 0.28em;
+    color: #b8851f;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  /* size demos */
+  .size-row {
+    display: flex; align-items: center; gap: 24px;
+    background: #fbf7ee; padding: 18px 24px; border-radius: 8px;
+    border: 1px solid rgba(184,133,31,0.12);
+    margin-top: 10px;
+  }
+  .size-label {
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(31,25,15,0.5);
+    min-width: 70px;
+  }
+  .nav-mini {
+    font-family: 'Fraunces', serif; font-weight:500;
+    font-size: 1rem; letter-spacing: -0.015em; color:#1f190f;
+    line-height: 1;
+  }
+  .nav-mini em { font-family: 'Fraunces', serif; font-style: italic; font-weight: 400; color:#b8851f; }
+  .nav-mini-sub {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 0.62rem;
+    letter-spacing: 0.22em;
+    color: #b8851f;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+</style>
+
+<h2>Aplicado: "dos noivos" menor, alinhado à esquerda e dourado</h2>
+<p class="subtitle">Mesmas 3 variações de ornamento, agora com a alteração que você pediu. Qual fica?</p>
+
+<div class="cards">
+  <!-- V1 -->
+  <div class="card" data-choice="v1-rule" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0">
+      <div class="stage v1">
+        <span class="main">Ca<em>i</em>xinha</span>
+        <div class="rule"></div>
+        <span class="sub">dos noivos</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>1 · "i" italic + fio curto à esquerda</h3>
+      <p>Fio dourado curto (80px) saindo da esquerda, "dos noivos" abaixo, dourado, menor. Mais editorial e contido.</p>
+    </div>
+  </div>
+
+  <!-- V2 -->
+  <div class="card" data-choice="v2-amp" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0">
+      <div class="stage v2">
+        <span class="main">Caixinha</span>
+        <span class="ornament">&amp;</span>
+        <span class="sub">dos noivos</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>2 · Ampersand dourado</h3>
+      <p>Sem fio. Um <strong>&amp;</strong> dourado entre as linhas, "dos noivos" pequeno e dourado abaixo. Cara de papelaria de casamento.</p>
+    </div>
+  </div>
+
+  <!-- V3 -->
+  <div class="card" data-choice="v3-swash" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0">
+      <div class="stage v3">
+        <span class="main"><span class="swash">C</span>aixinha</span>
+        <span class="sub">dos noivos</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>3 · "C" capitular com swash</h3>
+      <p>"C" inicial maior em itálico dourado, "dos noivos" pequeno e dourado direto abaixo. Mais limpo e direto.</p>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top: 48px;">Como fica em tamanhos menores</h3>
+
+<div class="size-row">
+  <span class="size-label">Navbar</span>
+  <div style="display:flex; flex-direction:column;">
+    <span class="nav-mini">Ca<em>i</em>xinha</span>
+    <span class="nav-mini-sub">dos noivos</span>
+  </div>
+</div>
+
+<div class="size-row">
+  <span class="size-label">Mobile</span>
+  <div style="display:flex; flex-direction:column;">
+    <span class="nav-mini" style="font-size: 0.9rem">Ca<em>i</em>xinha</span>
+    <span class="nav-mini-sub" style="font-size: 0.55rem">dos noivos</span>
+  </div>
+</div>

@@ -1,0 +1,229 @@
+<style>
+  .stage {
+    background: #fbf7ee;
+    border: 1px solid rgba(184, 133, 31, 0.15);
+    border-radius: 12px;
+    padding: 56px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    min-height: 220px;
+  }
+  .stage-small {
+    padding: 28px 16px;
+    min-height: 80px;
+  }
+  .ff-display { font-family: 'Fraunces', Georgia, serif; }
+  .ff-script { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; }
+  .gold { color: #b8851f; }
+  .moss { color: #4a5c44; }
+  .ink  { color: #1f190f; }
+  .mute { color: rgba(31,25,15,0.55); }
+  .label-tag {
+    font-size: 0.65rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(31,25,15,0.5);
+    font-family: 'Manrope', sans-serif;
+  }
+  /* Direction A: Monograma editorial */
+  .mono-wrap { display: flex; align-items: center; gap: 18px; }
+  .mono-mark {
+    width: 56px; height: 56px;
+    border: 1.5px solid #b8851f;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #b8851f;
+    position: relative;
+  }
+  .mono-mark .C {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 500;
+    font-size: 1.85rem;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+  .mono-mark .N {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 1.1rem;
+    line-height: 1;
+    position: absolute;
+    bottom: 10px;
+    right: 12px;
+    color: #4a5c44;
+  }
+  .mono-word {
+    display: flex; flex-direction: column; line-height: 1.05;
+  }
+  .mono-word .top {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 500;
+    font-size: 1.45rem;
+    letter-spacing: -0.015em;
+    color: #1f190f;
+  }
+  .mono-word .bot {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    letter-spacing: 0.18em;
+    color: rgba(31,25,15,0.6);
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+
+  /* Direction B: Selo/medalhão com folhas */
+  .seal-wrap { display: flex; align-items: center; gap: 18px; }
+  .seal-mark { width: 64px; height: 64px; }
+  .seal-word { display: flex; flex-direction: column; line-height: 1.05; }
+  .seal-word .top {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 500;
+    font-size: 1.45rem;
+    letter-spacing: -0.015em;
+    color: #1f190f;
+  }
+  .seal-word .bot {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    letter-spacing: 0.16em;
+    color: rgba(31,25,15,0.6);
+    margin-top: 3px;
+  }
+
+  /* Direction C: Wordmark editorial (sem ícone) */
+  .word-only { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .word-only .main {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 500;
+    font-size: 2.4rem;
+    letter-spacing: -0.025em;
+    color: #1f190f;
+    line-height: 0.95;
+  }
+  .word-only .main em {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    color: #b8851f;
+  }
+  .word-only .rule {
+    width: 50%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(184,133,31,0.6), transparent);
+    margin: 8px 0;
+  }
+  .word-only .sub {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 1rem;
+    letter-spacing: 0.32em;
+    color: rgba(31,25,15,0.55);
+    text-transform: uppercase;
+  }
+
+  /* small previews in card-image */
+  .preview-row { display:flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .preview-mini { font-family:'Fraunces',serif; font-size: 0.85rem; color:#1f190f; display:inline-flex; align-items:center; gap:6px; }
+</style>
+
+<h2>3 direções de redesign</h2>
+<p class="subtitle">Mantendo a paleta dourado #B8851F + marfim + verde-musgo e as fontes Fraunces / Cormorant. Clica na que mais te chamar atenção (ou diz por aqui se quer combinar elementos).</p>
+
+<div class="cards">
+
+  <!-- ============ A: MONOGRAMA EDITORIAL ============ -->
+  <div class="card" data-choice="monogram" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fbf7ee; padding:0">
+      <div class="stage" style="margin:0; border:none; border-radius:0">
+        <div class="mono-wrap">
+          <div class="mono-mark">
+            <span class="C">C</span>
+            <span class="N">n</span>
+          </div>
+          <div class="mono-word">
+            <span class="top">Caixinha</span>
+            <span class="bot">dos noivos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A · Monograma editorial</h3>
+      <p>Iniciais <strong>C</strong> + <strong>n</strong> entrelaçadas em moldura circular dourada. Remete a aliança/anel e a monogramas tradicionais de convite de casamento. <strong>Wordmark horizontal</strong> com Fraunces + Cormorant resolve a hierarquia.</p>
+      <p style="font-size:0.8rem; color:rgba(31,25,15,0.55); margin-top:6px"><em>Versátil:</em> o monograma sozinho funciona como favicon/avatar.</p>
+    </div>
+  </div>
+
+  <!-- ============ B: SELO COM RAMINHO BOTÂNICO ============ -->
+  <div class="card" data-choice="seal" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fbf7ee; padding:0">
+      <div class="stage" style="margin:0; border:none; border-radius:0">
+        <div class="seal-wrap">
+          <svg class="seal-mark" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- circle -->
+            <circle cx="32" cy="32" r="29" stroke="#b8851f" stroke-width="1.2"/>
+            <circle cx="32" cy="32" r="25" stroke="#b8851f" stroke-width="0.6" stroke-dasharray="1 2.5" opacity="0.6"/>
+            <!-- left sprig -->
+            <path d="M14 32 C 18 28, 22 30, 24 33" stroke="#4a5c44" stroke-width="1" stroke-linecap="round"/>
+            <ellipse cx="16.5" cy="30" rx="2" ry="1" fill="#4a5c44" transform="rotate(-30 16.5 30)"/>
+            <ellipse cx="19.5" cy="29.5" rx="2" ry="1" fill="#4a5c44" transform="rotate(-20 19.5 29.5)"/>
+            <ellipse cx="22" cy="30.5" rx="2" ry="1" fill="#4a5c44" transform="rotate(-10 22 30.5)"/>
+            <!-- right sprig (mirrored) -->
+            <path d="M50 32 C 46 28, 42 30, 40 33" stroke="#4a5c44" stroke-width="1" stroke-linecap="round"/>
+            <ellipse cx="47.5" cy="30" rx="2" ry="1" fill="#4a5c44" transform="rotate(30 47.5 30)"/>
+            <ellipse cx="44.5" cy="29.5" rx="2" ry="1" fill="#4a5c44" transform="rotate(20 44.5 29.5)"/>
+            <ellipse cx="42" cy="30.5" rx="2" ry="1" fill="#4a5c44" transform="rotate(10 42 30.5)"/>
+            <!-- ampersand / heart in middle -->
+            <path d="M32 28 C 30 26, 27 27, 27 30 C 27 33, 32 36, 32 36 C 32 36, 37 33, 37 30 C 37 27, 34 26, 32 28 Z" fill="#b8851f"/>
+            <!-- top dot -->
+            <circle cx="32" cy="10" r="1.2" fill="#b8851f"/>
+          </svg>
+          <div class="seal-word">
+            <span class="top">Caixinha</span>
+            <span class="bot">dos noivos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B · Selo botânico</h3>
+      <p>Medalhão circular com <strong>raminhos de oliveira/louro</strong> (tradição nupcial) e um coração discreto ao centro. Verde-musgo + dourado entram em diálogo. Cara de "selo de casa", herança, brasão familiar — totalmente alinhado com a paleta editorial.</p>
+      <p style="font-size:0.8rem; color:rgba(31,25,15,0.55); margin-top:6px"><em>Sofisticado e único:</em> sai do clichê de "caixa de presente".</p>
+    </div>
+  </div>
+
+  <!-- ============ C: WORDMARK PURO ============ -->
+  <div class="card" data-choice="wordmark" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fbf7ee; padding:0">
+      <div class="stage" style="margin:0; border:none; border-radius:0">
+        <div class="word-only">
+          <span class="main">Caix<em>i</em>nha</span>
+          <div class="rule"></div>
+          <span class="sub">dos noivos</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C · Wordmark editorial (sem ícone)</h3>
+      <p>Sem ícone. Tipografia é o herói: <strong>Fraunces</strong> com um "i" itálico dourado destacado, fio horizontal sutil, e "dos noivos" em <strong>Cormorant</strong> espaçado. Estética de revista de casamento (Vogue Noiva, Constance).</p>
+      <p style="font-size:0.8rem; color:rgba(31,25,15,0.55); margin-top:6px"><em>Mais minimalista e arriscado:</em> exige um favicon separado (ex: só um "C" dourado).</p>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top: 32px; padding: 20px; background: rgba(184,133,31,0.05); border-radius: 8px; border-left: 3px solid #b8851f;">
+  <p style="font-family:'Manrope', sans-serif; font-size: 0.85rem; color: rgba(31,25,15,0.75); margin:0;">
+    <strong>Minha recomendação:</strong> direção <strong>A (monograma editorial)</strong>. Resolve as 3 dores que você apontou:
+    <br>① substitui o bloco "tech" por uma moldura circular sutil (cara de aliança),
+    <br>② traz personalidade de casamento sem cair no clichê de caixa de presente,
+    <br>③ o wordmark horizontal com mistura Fraunces/Cormorant cria hierarquia clara.
+    <br>Bônus: o monograma sozinho vira favicon/avatar perfeito.
+  </p>
+</div>
