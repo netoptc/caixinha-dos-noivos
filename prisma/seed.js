@@ -1,12 +1,13 @@
-import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
+/* eslint-disable @typescript-eslint/no-require-imports */
+const { PrismaClient } = require("@prisma/client");
+const bcrypt = require("bcryptjs");
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("🌱 Seeding database...");
 
-  const adminEmail = process.env.ADMIN_EMAIL?.trim();
+  const adminEmail = process.env.ADMIN_EMAIL && process.env.ADMIN_EMAIL.trim();
   const adminPassword = process.env.ADMIN_PASSWORD;
 
   if (!adminEmail || !adminPassword) {
