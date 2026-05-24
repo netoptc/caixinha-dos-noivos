@@ -45,14 +45,14 @@ const DEMO = {
   ],
 };
 
-// Stories simuladas — usam a foto do casal como placeholder. O detalhe é que
-// no modal aparece um CTA gigante "Criar minha caixinha" sobre a foto.
+// Stories simuladas — cada doador tem sua própria foto. No modal aparece um
+// CTA gigante "Criar minha caixinha" sobre a foto.
 const DEMO_STORIES = [
-  { id: "s1", donorName: "Roberto Alves", photoUrl: DEMO.coupleImageUrl },
-  { id: "s2", donorName: "Maria Silva", photoUrl: DEMO.coupleImageUrl },
-  { id: "s3", donorName: "Fernando Costa", photoUrl: DEMO.coupleImageUrl },
-  { id: "s4", donorName: "Carla Oliveira", photoUrl: DEMO.coupleImageUrl },
-  { id: "s5", donorName: "Marcos Ferreira", photoUrl: DEMO.coupleImageUrl },
+  { id: "s1", donorName: "Tereza Mendes", photoUrl: "/assets/imgs/tereza.png" },
+  { id: "s2", donorName: "Maria Silva", photoUrl: "/assets/imgs/maria.png" },
+  { id: "s3", donorName: "Fernando Costa", photoUrl: "/assets/imgs/fernando.png" },
+  { id: "s4", donorName: "Carla Oliveira", photoUrl: "/assets/imgs/carla.png" },
+  { id: "s5", donorName: "Marcos Ferreira", photoUrl: "/assets/imgs/marcos.png" },
 ];
 
 export default function DemoPage() {
