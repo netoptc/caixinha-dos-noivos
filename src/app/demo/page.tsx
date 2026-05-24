@@ -45,14 +45,15 @@ const DEMO = {
   ],
 };
 
-// Stories simuladas — cada doador tem sua própria foto. No modal aparece um
-// CTA gigante "Criar minha caixinha" sobre a foto.
+// Stories simuladas — cada doador tem sua própria foto. Os amounts são
+// fictícios e servem só pra misturar os tiles (fotos + textos) por valor
+// no carrossel, como o DonorRanking real faria.
 const DEMO_STORIES = [
-  { id: "s1", donorName: "Tereza Mendes", photoUrl: "/assets/imgs/tereza.png" },
-  { id: "s2", donorName: "Maria Silva", photoUrl: "/assets/imgs/maria.png" },
-  { id: "s3", donorName: "Fernando Costa", photoUrl: "/assets/imgs/fernando.png" },
-  { id: "s4", donorName: "Carla Oliveira", photoUrl: "/assets/imgs/carla.png" },
-  { id: "s5", donorName: "Marcos Ferreira", photoUrl: "/assets/imgs/marcos.png" },
+  { id: "s1", donorName: "Tereza Mendes", photoUrl: "/assets/imgs/tereza.png", amount: 1500 },
+  { id: "s2", donorName: "Maria Souza", photoUrl: "/assets/imgs/maria.png", amount: 600 },
+  { id: "s3", donorName: "Fernando Lima", photoUrl: "/assets/imgs/fernando.png", amount: 400 },
+  { id: "s4", donorName: "Carla Almeida", photoUrl: "/assets/imgs/carla.png", amount: 200 },
+  { id: "s5", donorName: "Marcos Pereira", photoUrl: "/assets/imgs/marcos.png", amount: 800 },
 ];
 
 export default function DemoPage() {
@@ -64,17 +65,17 @@ export default function DemoPage() {
   const goalAmount = DEMO.goalAmount;
   const donorCount = DEMO.donors.length;
 
-  // Array UNIFICADO de stories: 5 fotos (simulando video) + textos dos donors
-  // ordenados por valor. Indice e contador unicos (1 de 12) — mesmo modal.
+  // Array UNIFICADO de stories: 5 fotos (simulando video) + textos dos donors.
+  // Misturados POR VALOR (amount desc), igual o DonorRanking real faz na app —
+  // assim foto e texto se intercalam naturalmente no carrossel.
   const photoStories: StoryItem[] = DEMO_STORIES.map((s) => ({
     id: s.id,
     donorName: s.donorName,
-    amount: 0,
+    amount: s.amount,
     type: "image" as const,
     photoUrl: s.photoUrl,
   }));
-  const textStories: StoryItem[] = [...DEMO.donors]
-    .sort((a, b) => b.amount - a.amount)
+  const textStories: StoryItem[] = DEMO.donors
     .filter((d) => d.message && d.message.trim().length > 0)
     .map((d) => ({
       id: d.id,
@@ -83,7 +84,9 @@ export default function DemoPage() {
       type: "text" as const,
       message: d.message!.trim(),
     }));
-  const allStories: StoryItem[] = [...photoStories, ...textStories];
+  const allStories: StoryItem[] = [...photoStories, ...textStories].sort(
+    (a, b) => b.amount - a.amount,
+  );
 
   return (
     <div
