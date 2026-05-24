@@ -120,7 +120,7 @@ export function DonorRanking({
                 >
                   <div className="bg-white p-[2px] rounded-full">
                     <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden flex items-center justify-center">
-                      {story.type === "video" ? (
+                      {story.type === "video" && (
                         <video
                           src={story.videoUrl}
                           className="w-full h-full object-cover"
@@ -131,7 +131,8 @@ export function DonorRanking({
                             (e.currentTarget as HTMLVideoElement).currentTime = 0.5;
                           }}
                         />
-                      ) : (
+                      )}
+                      {story.type === "text" && (
                         <div
                           className="w-full h-full flex items-center justify-center text-center px-1.5 text-white font-medium leading-[1.1]"
                           style={{

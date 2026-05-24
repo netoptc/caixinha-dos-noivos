@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { X, ChevronLeft, ChevronRight, Play, Heart, Download, Volume2, VolumeX } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { X, ChevronLeft, ChevronRight, Play, Heart, Download, Volume2, VolumeX, ArrowRight } from "lucide-react";
 import { formatWeddingDate } from "@/lib/utils";
 
 export type StoryItem =
@@ -19,6 +21,13 @@ export type StoryItem =
       amount: number;
       type: "text";
       message: string;
+    }
+  | {
+      id: string;
+      donorName: string;
+      amount: number;
+      type: "image";
+      photoUrl: string;
     };
 
 interface VideoModalProps {
@@ -30,8 +39,13 @@ interface VideoModalProps {
   weddingDate?: string | null;
   /** Quando true, exibe o botão de baixar vídeo. Use apenas no painel dos noivos. */
   canDownload?: boolean;
+  /** Quando true, exibe overlay de demonstração com badge "Demonstração" e CTA
+   * "Criar minha caixinha" sobre todo story (usado apenas na pagina /demo). */
+  demoCta?: boolean;
   onClose: () => void;
 }
+
+const IMAGE_STORY_DURATION_MS = 5_000;
 
 function getTextStoryDurationMs(message: string) {
   return Math.min(10_000, Math.max(5_000, message.length * 60));
@@ -44,6 +58,7 @@ export function VideoModal({
   coupleNames,
   weddingDate,
   canDownload = false,
+  demoCta = false,
   onClose,
 }: VideoModalProps) {
   const [index, setIndex] = useState(initialIndex);
@@ -113,9 +128,13 @@ export function VideoModal({
       }, 300);
     };
 
-    // ─── Caminho TEXTO: timer linear baseado em comprimento ───
-    if (current.type === "text") {
-      const durationMs = getTextStoryDurationMs(current.message);
+    // ─── Caminho TEXTO/IMAGEM: timer linear (texto baseado em comprimento,
+    // imagem com duracao fixa) ───
+    if (current.type === "text" || current.type === "image") {
+      const durationMs =
+        current.type === "text"
+          ? getTextStoryDurationMs(current.message)
+          : IMAGE_STORY_DURATION_MS;
       let startedAt = performance.now();
       let elapsedAccum = 0;
       let lastPausedSnapshot = false;
@@ -305,7 +324,7 @@ export function VideoModal({
   }
 
   function togglePause() {
-    if (current.type === "text") {
+    if (current.type !== "video") {
       setPaused((p) => !p);
       return;
     }
@@ -466,7 +485,7 @@ export function VideoModal({
                 "0 0 32px rgba(255,255,255,0.15), 0 20px 50px rgba(0,0,0,0.25)",
             }}
           >
-            {current.type === "video" ? (
+            {current.type === "video" && (
               <video
                 key={current.id}
                 ref={videoRef}
@@ -477,7 +496,8 @@ export function VideoModal({
                 muted={muted}
                 onClick={togglePause}
               />
-            ) : (
+            )}
+            {current.type === "text" && (
               <TextStory
                 key={current.id}
                 message={current.message}
@@ -485,8 +505,24 @@ export function VideoModal({
                 onClick={togglePause}
               />
             )}
+            {current.type === "image" && (
+              <div
+                key={current.id}
+                className="w-full h-full cursor-pointer relative"
+                onClick={togglePause}
+              >
+                <Image
+                  src={current.photoUrl}
+                  alt={current.donorName}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 400px"
+                  priority
+                />
+              </div>
+            )}
             {paused && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                 <div
                   className="w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-sm"
                   style={{ background: `${primaryColor}99` }}
@@ -494,6 +530,36 @@ export function VideoModal({
                   <Play className="w-6 h-6 text-white fill-white ml-0.5" />
                 </div>
               </div>
+            )}
+
+            {/* CTA central de demonstracao (apenas /demo) */}
+            {demoCta && (
+              <>
+                {/* Gradiente p/ legibilidade sobre conteudo claro (foto/video) */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black/60 pointer-events-none z-[15]" />
+                <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-8 z-20 pointer-events-none">
+                  <div className="text-center mb-4 px-4 py-2 rounded-full backdrop-blur-md bg-black/30 border border-white/15">
+                    <p className="text-white/90 text-[10px] font-semibold uppercase tracking-[0.18em]">
+                      Demonstração
+                    </p>
+                  </div>
+                  <p
+                    className="text-white text-center font-semibold text-base leading-tight mb-4 max-w-[18rem]"
+                    style={{ textShadow: "0 2px 12px rgba(0,0,0,0.45)" }}
+                  >
+                    Quer ter mensagens assim no seu casamento?
+                  </p>
+                  <Link
+                    href="/criar-caixinha"
+                    onClick={(e) => e.stopPropagation()}
+                    className="pointer-events-auto inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white text-sm font-semibold shadow-2xl transition-all hover:-translate-y-0.5"
+                    style={{ color: primaryColor }}
+                  >
+                    Criar minha caixinha
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </>
             )}
 
             {/* Tap zones */}

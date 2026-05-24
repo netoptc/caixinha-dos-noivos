@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { DonorRanking } from "@/components/caixinha/DonorRanking";
 import { ArrecadacaoCard } from "@/components/caixinha/ArrecadacaoCard";
-import { DemoStoriesModal } from "@/components/demo/DemoStoriesModal";
 import { VideoModal, type StoryItem } from "@/components/caixinha/VideoModal";
 
 const DEMO = {
@@ -59,17 +58,22 @@ const DEMO_STORIES = [
 export default function DemoPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [storyIndex, setStoryIndex] = useState<number | null>(null);
-  const [textStoryIndex, setTextStoryIndex] = useState<number | null>(null);
 
   const primary = DEMO.primaryColor;
   const raisedAmount = DEMO.raisedAmount;
   const goalAmount = DEMO.goalAmount;
   const donorCount = DEMO.donors.length;
 
-  // Stories de texto = doadores com mensagem, ordenados por valor (mesmo
-  // criterio do DonorRanking para manter consistencia visual).
-  type TextStory = Extract<StoryItem, { type: "text" }>;
-  const textStories: TextStory[] = [...DEMO.donors]
+  // Array UNIFICADO de stories: 5 fotos (simulando video) + textos dos donors
+  // ordenados por valor. Indice e contador unicos (1 de 12) — mesmo modal.
+  const photoStories: StoryItem[] = DEMO_STORIES.map((s) => ({
+    id: s.id,
+    donorName: s.donorName,
+    amount: 0,
+    type: "image" as const,
+    photoUrl: s.photoUrl,
+  }));
+  const textStories: StoryItem[] = [...DEMO.donors]
     .sort((a, b) => b.amount - a.amount)
     .filter((d) => d.message && d.message.trim().length > 0)
     .map((d) => ({
@@ -79,6 +83,7 @@ export default function DemoPage() {
       type: "text" as const,
       message: d.message!.trim(),
     }));
+  const allStories: StoryItem[] = [...photoStories, ...textStories];
 
   return (
     <div
@@ -186,15 +191,15 @@ export default function DemoPage() {
             <h2 className="font-display text-xl sm:text-2xl">Quem contribuiu</h2>
           </div>
 
-          {/* Carrossel unico de mensagens — videos (simulados com foto + play
-             overlay) e textos misturados, ordem natural: fotos primeiro,
-             textos em seguida. Cada tipo abre seu proprio modal. */}
+          {/* Carrossel UNICO de mensagens — fotos (simulando video) e textos
+             misturados num so array. Indice unificado: clica em qualquer tile
+             e abre o VideoModal no mesmo conjunto de allStories. */}
           <div className="mb-5">
             <p className="text-[11px] font-semibold text-foreground/60 mb-3">
               Mensagens
             </p>
             <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-2 px-2 py-2">
-              {DEMO_STORIES.map((story, i) => (
+              {allStories.map((story, i) => (
                 <button
                   key={story.id}
                   type="button"
@@ -207,51 +212,35 @@ export default function DemoPage() {
                   >
                     <div className="bg-white p-[2px] rounded-full">
                       <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden flex items-center justify-center relative">
-                        <Image
-                          src={story.photoUrl}
-                          alt={story.donorName}
-                          fill
-                          className="object-cover"
-                          sizes="56px"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                          <Play
-                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white drop-shadow"
-                            fill="currentColor"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-[11px] text-foreground/70 max-w-[56px] truncate text-center">
-                    {story.donorName.split(" ")[0]}
-                  </span>
-                </button>
-              ))}
-
-              {textStories.map((story, i) => (
-                <button
-                  key={story.id}
-                  type="button"
-                  onClick={() => setTextStoryIndex(i)}
-                  className="flex flex-col items-center gap-1.5 flex-shrink-0 group focus:outline-none"
-                >
-                  <div
-                    className="p-[2px] rounded-full transition-transform group-hover:scale-105"
-                    style={{ background: primary }}
-                  >
-                    <div className="bg-white p-[2px] rounded-full">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden flex items-center justify-center">
-                        <div
-                          className="w-full h-full flex items-center justify-center text-center px-1.5 text-white font-medium leading-[1.1]"
-                          style={{
-                            background: primary,
-                            fontSize: "9px",
-                            fontFamily: "Georgia, serif",
-                          }}
-                        >
-                          <span className="line-clamp-3">{story.message}</span>
-                        </div>
+                        {story.type === "image" && (
+                          <>
+                            <Image
+                              src={story.photoUrl}
+                              alt={story.donorName}
+                              fill
+                              className="object-cover"
+                              sizes="56px"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                              <Play
+                                className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white drop-shadow"
+                                fill="currentColor"
+                              />
+                            </div>
+                          </>
+                        )}
+                        {story.type === "text" && (
+                          <div
+                            className="w-full h-full flex items-center justify-center text-center px-1.5 text-white font-medium leading-[1.1]"
+                            style={{
+                              background: primary,
+                              fontSize: "9px",
+                              fontFamily: "Georgia, serif",
+                            }}
+                          >
+                            <span className="line-clamp-3">{story.message}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -295,25 +284,16 @@ export default function DemoPage() {
         </p>
       </div>
 
-      {/* STORIES MODAL — abre quando clica num tile de foto (simulando video) */}
+      {/* UNIFIED STORIES MODAL — todos os tipos (foto + texto) com contador
+         unico (1 de N) e CTA de demonstracao em todos. */}
       {storyIndex !== null && (
-        <DemoStoriesModal
-          stories={DEMO_STORIES}
+        <VideoModal
+          videos={allStories}
           initialIndex={storyIndex}
           primaryColor={primary}
           coupleNames={DEMO.coupleNames}
+          demoCta
           onClose={() => setStoryIndex(null)}
-        />
-      )}
-
-      {/* TEXT STORIES MODAL — abre quando clica num tile de mensagem de texto */}
-      {textStoryIndex !== null && (
-        <VideoModal
-          videos={textStories}
-          initialIndex={textStoryIndex}
-          primaryColor={primary}
-          coupleNames={DEMO.coupleNames}
-          onClose={() => setTextStoryIndex(null)}
         />
       )}
 
