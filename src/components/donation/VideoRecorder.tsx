@@ -8,6 +8,10 @@ interface VideoRecorderProps {
   donationId?: string;
 }
 
+// Quanto tempo o usuário precisa segurar até a gravação começar de fato.
+// Tap mais curto que isso é considerado acidental → mostramos a dica.
+const HOLD_THRESHOLD_MS = 350;
+
 export function VideoRecorder({ onVideoReady, donationId }: VideoRecorderProps) {
   const [mode, setMode] = useState<"idle" | "recording" | "preview" | "uploading" | "done">("idle");
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
@@ -15,12 +19,15 @@ export function VideoRecorder({ onVideoReady, donationId }: VideoRecorderProps) 
   const [timeLeft, setTimeLeft] = useState(10);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"record" | "upload">("record");
+  const [holdHint, setHoldHint] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hintTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const startRecording = useCallback(async () => {
@@ -79,6 +86,45 @@ export function VideoRecorder({ onVideoReady, donationId }: VideoRecorderProps) 
       mediaRecorderRef.current.stop();
     }
   }, []);
+
+  // ── Press-and-hold handlers ──
+  // Apenas armam o startRecording após HOLD_THRESHOLD_MS pra evitar acessar
+  // câmera em taps acidentais. Soltar antes do threshold mostra a dica.
+  const handlePressDown = useCallback(() => {
+    if (mode !== "idle") return;
+    setHoldHint(false);
+    if (hintTimerRef.current) {
+      clearTimeout(hintTimerRef.current);
+      hintTimerRef.current = null;
+    }
+    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+    holdTimerRef.current = setTimeout(() => {
+      holdTimerRef.current = null;
+      startRecording();
+    }, HOLD_THRESHOLD_MS);
+  }, [mode, startRecording]);
+
+  const handlePressUp = useCallback(() => {
+    // Se ainda estava no período de "armando" — soltou antes da hora.
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+      setHoldHint(true);
+      if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
+      hintTimerRef.current = setTimeout(() => setHoldHint(false), 2500);
+      return;
+    }
+    // Já estava gravando — solta = parar.
+    if (mode === "recording") stopRecording();
+  }, [mode, stopRecording]);
+
+  const handlePressCancel = useCallback(() => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    if (mode === "recording") stopRecording();
+  }, [mode, stopRecording]);
 
   const resetRecording = () => {
     if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
@@ -188,22 +234,39 @@ export function VideoRecorder({ onVideoReady, donationId }: VideoRecorderProps) 
             )}
           </div>
 
-          {mode === "idle" ? (
-            <button
-              onClick={startRecording}
-              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-medium py-3 rounded-xl transition-colors"
-            >
-              <Video className="w-5 h-5" />
-              Iniciar gravação (10s)
-            </button>
-          ) : (
-            <button
-              onClick={stopRecording}
-              className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-xl transition-colors"
-            >
-              <StopCircle className="w-5 h-5" />
-              Parar gravação
-            </button>
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              handlePressDown();
+            }}
+            onPointerUp={handlePressUp}
+            onPointerLeave={handlePressCancel}
+            onPointerCancel={handlePressCancel}
+            onContextMenu={(e) => e.preventDefault()}
+            className={`w-full flex items-center justify-center gap-2 text-white font-medium py-3 rounded-xl transition-colors select-none touch-none ${
+              mode === "recording"
+                ? "bg-red-500 hover:bg-red-600"
+                : "bg-primary hover:bg-primary/90"
+            }`}
+          >
+            {mode === "recording" ? (
+              <>
+                <StopCircle className="w-5 h-5" />
+                Gravando… solte para parar
+              </>
+            ) : (
+              <>
+                <Video className="w-5 h-5" />
+                Segure para gravar (até 10s)
+              </>
+            )}
+          </button>
+
+          {holdHint && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3 text-sm text-center">
+              <span className="font-semibold">Segure</span> o botão para gravar — não solte enquanto fala.
+            </div>
           )}
         </div>
       )}

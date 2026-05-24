@@ -674,7 +674,11 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
 
           <button
             onClick={() => validateStep3() && setStep("method")}
-            disabled={videoUploading}
+            disabled={
+              videoUploading ||
+              (messageMode === "video" && !videoUrl) ||
+              (messageMode === "text" && !textMessage.trim())
+            }
             className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-white text-base font-semibold transition-all hover:shadow-xl hover:-translate-y-0.5 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg"
             style={{
               backgroundColor: primaryColor,
