@@ -583,6 +583,7 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
                   label={label}
                   subtitle={subtitle}
                   icon={icon}
+                  subtotal={finalAmount}
                   fee={fee}
                   total={total}
                   primaryColor={primaryColor}
@@ -607,6 +608,8 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
             Pagar com PIX
           </h2>
           <PaymentPix
+            subtotal={finalAmount}
+            fee={round2(donationTotal - finalAmount)}
             amount={donationTotal}
             donationId={donationId}
             onSuccess={handleSuccess}
@@ -679,6 +682,7 @@ function PaymentOption({
   label,
   subtitle,
   icon,
+  subtotal,
   fee,
   total,
   primaryColor,
@@ -688,6 +692,7 @@ function PaymentOption({
   label: string;
   subtitle: string;
   icon: React.ReactNode;
+  subtotal: number;
   fee: number;
   total: number;
   primaryColor: string;
@@ -730,21 +735,32 @@ function PaymentOption({
           />
         )}
       </div>
-      <div className="grid grid-cols-2 gap-4 pt-3 border-t border-border/40">
-        <div>
-          <p className="text-xs text-foreground/55 mb-0.5">Taxa de serviço</p>
-          <p className="text-sm font-semibold tabular-nums text-foreground/80">
-            {formatCurrency(fee)}
-          </p>
+      <div className="space-y-1.5 pt-3 border-t border-border/40 text-sm">
+        <div className="flex items-baseline justify-between">
+          <span className="text-xs text-foreground/55">Subtotal</span>
+          <span className="tabular-nums font-medium text-foreground/80">
+            {formatCurrency(subtotal)}
+          </span>
         </div>
-        <div className="text-right">
-          <p className="text-xs text-foreground/55 mb-0.5">Total a pagar</p>
-          <p
+        <div className="flex items-baseline justify-between">
+          <span className="text-xs text-foreground/55">Taxa de serviço</span>
+          <span className="tabular-nums font-medium text-foreground/80">
+            {formatCurrency(fee)}
+          </span>
+        </div>
+        <div
+          className="flex items-baseline justify-between pt-1.5 mt-0.5 border-t"
+          style={{ borderColor: `${primaryColor}25` }}
+        >
+          <span className="text-xs font-semibold text-foreground/75">
+            Total a pagar
+          </span>
+          <span
             className="text-base font-semibold tabular-nums"
             style={{ color: primaryColor }}
           >
             {formatCurrency(total)}
-          </p>
+          </span>
         </div>
       </div>
     </button>

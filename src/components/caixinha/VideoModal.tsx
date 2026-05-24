@@ -86,31 +86,89 @@ export function VideoModal({
     if (!video) return;
 
     let rafId = 0;
+    let cancelled = false;
+    let knownDuration = 0;
+    let durationFixed = false;
+    let advanceTimer: ReturnType<typeof setTimeout> | null = null;
+    let advanced = false;
+
+    const advance = () => {
+      if (advanced || cancelled) return;
+      advanced = true;
+      setProgress(100);
+      advanceTimer = setTimeout(() => {
+        if (!cancelled) goNext();
+      }, 300);
+    };
+
+    const startPlayback = () => {
+      if (cancelled) return;
+      video.muted = true;
+      const p = video.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+      rafId = requestAnimationFrame(tick);
+    };
+
     const tick = () => {
-      const dur = video.duration;
-      if (dur && isFinite(dur)) {
-        setProgress((video.currentTime / dur) * 100);
+      if (cancelled) return;
+      const dur = knownDuration || video.duration;
+      if (dur && isFinite(dur) && dur > 0) {
+        const pct = Math.min(100, (video.currentTime / dur) * 100);
+        setProgress(pct);
+        // Fallback: alguns navegadores não disparam 'ended' depois do hack de
+        // duração — então avançamos quando estiver praticamente no fim.
+        if (!video.paused && video.currentTime >= dur - 0.15) {
+          advance();
+        }
       }
       rafId = requestAnimationFrame(tick);
     };
 
-    const handleEnded = () => {
-      setProgress(100);
-      setTimeout(goNext, 300);
+    const handleEnded = () => advance();
+
+    // WebM vindo do MediaRecorder não traz cue de duração no header,
+    // então video.duration retorna Infinity. Forçamos o cálculo seekando
+    // pra um tempo gigante; o navegador então atualiza para o valor real.
+    const fixDurationIfNeeded = () => {
+      if (durationFixed) return;
+      durationFixed = true;
+      if (!isFinite(video.duration) || video.duration === 0) {
+        const onTimeUpdate = () => {
+          video.removeEventListener("timeupdate", onTimeUpdate);
+          if (isFinite(video.duration) && video.duration > 0) {
+            knownDuration = video.duration;
+          }
+          try {
+            video.currentTime = 0;
+          } catch {}
+          startPlayback();
+        };
+        video.addEventListener("timeupdate", onTimeUpdate);
+        try {
+          video.currentTime = 1e101;
+        } catch {
+          startPlayback();
+        }
+      } else {
+        knownDuration = video.duration;
+        startPlayback();
+      }
     };
 
+    const handleLoadedMeta = () => fixDurationIfNeeded();
+
+    video.addEventListener("loadedmetadata", handleLoadedMeta);
     video.addEventListener("ended", handleEnded);
-    // Garante autoplay imediato — muted é obrigatório pra navegadores não bloquearem.
-    video.muted = true;
-    const playPromise = video.play();
-    if (playPromise && typeof playPromise.catch === "function") {
-      playPromise.catch(() => {});
+
+    if (video.readyState >= 1) {
+      fixDurationIfNeeded();
     }
 
-    rafId = requestAnimationFrame(tick);
-
     return () => {
+      cancelled = true;
       cancelAnimationFrame(rafId);
+      if (advanceTimer) clearTimeout(advanceTimer);
+      video.removeEventListener("loadedmetadata", handleLoadedMeta);
       video.removeEventListener("ended", handleEnded);
     };
   }, [index, goNext]);

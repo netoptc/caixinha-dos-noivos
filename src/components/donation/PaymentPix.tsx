@@ -2,11 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { Copy, Check, Loader2, AlertCircle } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { PaymentSummary } from "./PaymentSummary";
 
 const POLL_INTERVAL_MS = 4000;
 
 interface PaymentPixProps {
+  /** Valor que o casal recebe (sem a taxa) */
+  subtotal: number;
+  /** Taxa de serviço somada ao subtotal */
+  fee: number;
+  /** Valor total cobrado (subtotal + taxa) */
   amount: number;
   donationId: string;
   onSuccess: () => void;
@@ -21,6 +26,8 @@ interface PixData {
 }
 
 export function PaymentPix({
+  subtotal,
+  fee,
   amount,
   donationId,
   onSuccess,
@@ -95,22 +102,12 @@ export function PaymentPix({
 
   return (
     <div className="space-y-6 font-sans">
-      <div
-        className="rounded-2xl px-6 py-5 text-center"
-        style={{
-          backgroundColor: `${primaryColor}10`,
-          border: `1px solid ${primaryColor}40`,
-        }}
-      >
-        <p className="text-xs text-foreground/65 mb-1">Total a pagar</p>
-        <p
-          className="font-display text-4xl tabular-nums tracking-tight"
-          style={{ color: primaryColor }}
-        >
-          {formatCurrency(amount)}
-        </p>
-        <p className="text-xs text-foreground/55 mt-1">Inclui taxa de serviço</p>
-      </div>
+      <PaymentSummary
+        subtotal={subtotal}
+        fee={fee}
+        total={amount}
+        primaryColor={primaryColor}
+      />
 
       {loading && (
         <div className="flex flex-col items-center gap-3 py-10">

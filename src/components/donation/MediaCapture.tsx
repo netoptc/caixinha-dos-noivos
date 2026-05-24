@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Camera, Video, RotateCcw, Loader2, X, Check } from "lucide-react";
+import { Video, RotateCcw, Loader2, X, Check } from "lucide-react";
 
 type Mode = "idle" | "camera" | "recording" | "uploading" | "done";
 
@@ -11,13 +11,15 @@ interface MediaCaptureProps {
   primaryColor?: string;
 }
 
+const MAX_SECONDS = 60;
+
 export function MediaCapture({
   onVideoReady,
   primaryColor = "#d4a017",
 }: MediaCaptureProps) {
   const [mode, setMode] = useState<Mode>("idle");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
 
@@ -40,18 +42,28 @@ export function MediaCapture({
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const flipCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const stopStream = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    flipCanvasRef.current = null;
   }, []);
 
   const openCamera = useCallback(async () => {
     setError("");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: { facingMode: "user" },
         audio: true,
       });
       streamRef.current = stream;
@@ -70,16 +82,63 @@ export function MediaCapture({
   }, [mode]);
 
   const stopRecording = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (mediaRecorderRef.current?.state !== "inactive") {
-      mediaRecorderRef.current?.stop();
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      mediaRecorderRef.current.stop();
     }
   }, []);
 
   const startRecording = useCallback(() => {
-    if (!streamRef.current) return;
+    const stream = streamRef.current;
+    const video = liveVideoRef.current;
+    if (!stream || !video) return;
+    if (mediaRecorderRef.current?.state === "recording") return;
+
+    const settings = stream.getVideoTracks()[0]?.getSettings();
+    const shouldFlip = settings?.facingMode === "user";
+
+    let recordStream: MediaStream = stream;
+
+    if (shouldFlip) {
+      const width = video.videoWidth || settings?.width || 720;
+      const height = video.videoHeight || settings?.height || 1280;
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      flipCanvasRef.current = canvas;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        const draw = () => {
+          ctx.save();
+          ctx.scale(-1, 1);
+          ctx.drawImage(video, -width, 0, width, height);
+          ctx.restore();
+          rafRef.current = requestAnimationFrame(draw);
+        };
+        draw();
+        const canvasStream = canvas.captureStream(30);
+        stream.getAudioTracks().forEach((t) => canvasStream.addTrack(t));
+        recordStream = canvasStream;
+      }
+    }
+
     chunksRef.current = [];
-    const recorder = new MediaRecorder(streamRef.current);
+    let recorder: MediaRecorder;
+    try {
+      recorder = new MediaRecorder(recordStream);
+    } catch {
+      recorder = new MediaRecorder(stream);
+    }
     mediaRecorderRef.current = recorder;
 
     recorder.ondataavailable = (e) => {
@@ -114,13 +173,13 @@ export function MediaCapture({
 
     recorder.start();
     setMode("recording");
-    setTimeLeft(10);
+    setElapsed(0);
 
-    let count = 10;
+    let count = 0;
     timerRef.current = setInterval(() => {
-      count--;
-      setTimeLeft(count);
-      if (count <= 0) stopRecording();
+      count++;
+      setElapsed(count);
+      if (count >= MAX_SECONDS) stopRecording();
     }, 1000);
   }, [stopStream, stopRecording, onVideoReady]);
 
@@ -129,7 +188,7 @@ export function MediaCapture({
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     setMode("idle");
-    setTimeLeft(10);
+    setElapsed(0);
     setError("");
     onVideoReady(null);
   }, [previewUrl, stopStream, onVideoReady]);
@@ -138,6 +197,32 @@ export function MediaCapture({
     stopStream();
     setMode("idle");
   }, [stopStream]);
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {}
+      startRecording();
+    },
+    [startRecording],
+  );
+
+  const handlePointerEnd = useCallback(
+    (e: React.PointerEvent<HTMLButtonElement>) => {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+      stopRecording();
+    },
+    [stopRecording],
+  );
+
+  const timeLeft = Math.max(0, MAX_SECONDS - elapsed);
+  const progress = elapsed / MAX_SECONDS;
+  const ringRadius = 44;
+  const ringCircumference = 2 * Math.PI * ringRadius;
 
   return (
     <div className="flex flex-col items-center gap-3 w-full">
@@ -198,7 +283,7 @@ export function MediaCapture({
                   Gravar vídeo
                 </p>
                 <p className="text-[0.6rem] text-foreground/55 leading-tight">
-                  até 10s
+                  até 1min
                 </p>
               </div>
             </>
@@ -284,6 +369,7 @@ export function MediaCapture({
               <video
                 ref={liveVideoRef}
                 className="w-full h-full object-cover"
+                style={{ transform: "scaleX(-1)" }}
                 muted
                 playsInline
               />
@@ -292,7 +378,7 @@ export function MediaCapture({
                   <div
                     className="h-full rounded-full transition-[width] duration-1000 ease-linear"
                     style={{
-                      width: `${((10 - timeLeft) / 10) * 100}%`,
+                      width: `${progress * 100}%`,
                       backgroundColor: "white",
                       boxShadow: `0 0 8px ${primaryColor}`,
                     }}
@@ -301,43 +387,75 @@ export function MediaCapture({
               )}
             </div>
 
-            <div className="px-6 pt-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] flex items-center justify-center">
-              {mode === "camera" && (
-                <button
-                  onClick={startRecording}
-                  className="flex flex-col items-center gap-2 text-white active:scale-95 transition-transform"
-                  aria-label="Gravar vídeo"
+            <div className="px-6 pt-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] flex flex-col items-center justify-center gap-2">
+              <button
+                type="button"
+                onPointerDown={handlePointerDown}
+                onPointerUp={handlePointerEnd}
+                onPointerCancel={handlePointerEnd}
+                onContextMenu={(e) => e.preventDefault()}
+                className="relative active:scale-95 transition-transform select-none touch-none"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+                aria-label={
+                  mode === "recording"
+                    ? "Solte para parar"
+                    : "Segure para gravar"
+                }
+              >
+                <svg
+                  width="96"
+                  height="96"
+                  viewBox="0 0 96 96"
+                  className="-rotate-90"
                 >
-                  <div
-                    className="w-[80px] h-[80px] rounded-full flex items-center justify-center"
-                    style={{
-                      backgroundColor: primaryColor,
-                      boxShadow: `0 10px 24px -8px ${primaryColor}90`,
-                    }}
-                  >
-                    <Video className="w-8 h-8 text-white" />
-                  </div>
-                  <span className="text-sm font-semibold">Gravar · 10s</span>
-                </button>
-              )}
-              {mode === "recording" && (
-                <button
-                  onClick={stopRecording}
-                  className="flex flex-col items-center gap-2 text-white active:scale-95 transition-transform"
-                  aria-label="Parar gravação"
-                >
-                  <div
-                    className="w-[80px] h-[80px] rounded-full bg-white flex items-center justify-center"
-                    style={{ boxShadow: `0 10px 24px -8px ${primaryColor}90` }}
-                  >
-                    <div
-                      className="w-7 h-7 rounded-md"
-                      style={{ backgroundColor: primaryColor }}
+                  <circle
+                    cx="48"
+                    cy="48"
+                    r={ringRadius}
+                    fill="none"
+                    stroke="white"
+                    strokeOpacity="0.35"
+                    strokeWidth="3"
+                  />
+                  {mode === "recording" && (
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r={ringRadius}
+                      fill="none"
+                      stroke={primaryColor}
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeDasharray={ringCircumference}
+                      strokeDashoffset={ringCircumference * (1 - progress)}
+                      style={{
+                        transition: "stroke-dashoffset 1s linear",
+                      }}
                     />
-                  </div>
-                  <span className="text-sm font-semibold">Parar</span>
-                </button>
-              )}
+                  )}
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div
+                    className="rounded-full transition-all duration-200 ease-out"
+                    style={{
+                      width: mode === "recording" ? "36px" : "68px",
+                      height: mode === "recording" ? "36px" : "68px",
+                      backgroundColor:
+                        mode === "recording" ? primaryColor : "white",
+                      borderRadius: mode === "recording" ? "8px" : "9999px",
+                      boxShadow:
+                        mode === "recording"
+                          ? `0 0 24px ${primaryColor}90`
+                          : "0 4px 12px rgba(0,0,0,0.3)",
+                    }}
+                  />
+                </div>
+              </button>
+              <span className="text-white/85 text-xs font-medium">
+                {mode === "recording"
+                  ? "Solte para parar"
+                  : "Segure para gravar · até 1min"}
+              </span>
             </div>
           </div>,
           document.body,

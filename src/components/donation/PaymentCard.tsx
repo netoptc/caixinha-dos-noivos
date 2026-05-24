@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 const MIN_INSTALLMENT_VALUE = 5; // Asaas requires R$ 5,00 minimum per parcel
 import { CreditCard, Lock, Loader2, AlertCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { PaymentSummary } from "./PaymentSummary";
 
 interface GatewayFees {
   pixFixed: number;
@@ -166,31 +167,22 @@ export function PaymentCard({
     installmentsCount,
     gateway,
   );
+  const fee = round2(total - baseAmount);
   const installmentValue = round2(total / installmentsCount);
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Total */}
-      <div
-        className="rounded-2xl px-6 py-5 text-center"
-        style={{
-          backgroundColor: `${primaryColor}10`,
-          border: `1px solid ${primaryColor}40`,
-        }}
-      >
-        <p className="text-xs text-foreground/65 mb-1">Total a pagar</p>
-        <p
-          className="font-display text-4xl tabular-nums tracking-tight"
-          style={{ color: primaryColor }}
-        >
-          {formatCurrency(total)}
-        </p>
-        {installmentsCount > 1 && (
-          <p className="text-xs text-foreground/65 mt-1">
-            {installmentsCount}× de {formatCurrency(installmentValue)}
-          </p>
-        )}
-      </div>
+      <PaymentSummary
+        subtotal={baseAmount}
+        fee={fee}
+        total={total}
+        primaryColor={primaryColor}
+        hint={
+          installmentsCount > 1
+            ? `${installmentsCount}× de ${formatCurrency(installmentValue)}`
+            : undefined
+        }
+      />
 
       {/* Card visual mockup */}
       <div
