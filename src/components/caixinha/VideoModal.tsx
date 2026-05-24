@@ -333,8 +333,10 @@ export function VideoModal({
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center"
       style={{
-        // Fundo cheio na cor do casal — gradient suave do tom escolhido
-        background: `linear-gradient(160deg, ${primaryColor} 0%, ${primaryColor}dd 50%, ${primaryColor}aa 100%)`,
+        // Fundo cheio na cor do casal — sólido para nao revelar o body atras
+        // (com alpha as bordas mostravam o creme #fbf7ee e dava sensacao de
+        // transparente especialmente nos slides de texto).
+        background: primaryColor,
       }}
       onClick={onClose}
     >
