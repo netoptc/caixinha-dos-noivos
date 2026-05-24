@@ -1,16 +1,12 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Video, StopCircle, Upload, X, Play, RotateCcw, Loader2 } from "lucide-react";
+import { Video, Upload, X, Play, RotateCcw, Loader2 } from "lucide-react";
 
 interface VideoRecorderProps {
   onVideoReady: (videoUrl: string | null) => void;
   donationId?: string;
 }
-
-// Quanto tempo o usuário precisa segurar até a gravação começar de fato.
-// Tap mais curto que isso é considerado acidental → mostramos a dica.
-const HOLD_THRESHOLD_MS = 350;
 
 export function VideoRecorder({ onVideoReady, donationId }: VideoRecorderProps) {
   const [mode, setMode] = useState<"idle" | "recording" | "preview" | "uploading" | "done">("idle");
@@ -19,15 +15,12 @@ export function VideoRecorder({ onVideoReady, donationId }: VideoRecorderProps) 
   const [timeLeft, setTimeLeft] = useState(10);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"record" | "upload">("record");
-  const [holdHint, setHoldHint] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const hintTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const startRecording = useCallback(async () => {
@@ -87,44 +80,49 @@ export function VideoRecorder({ onVideoReady, donationId }: VideoRecorderProps) 
     }
   }, []);
 
-  // ── Press-and-hold handlers ──
-  // Apenas armam o startRecording após HOLD_THRESHOLD_MS pra evitar acessar
-  // câmera em taps acidentais. Soltar antes do threshold mostra a dica.
-  const handlePressDown = useCallback(() => {
-    if (mode !== "idle") return;
-    setHoldHint(false);
-    if (hintTimerRef.current) {
-      clearTimeout(hintTimerRef.current);
-      hintTimerRef.current = null;
-    }
-    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
-    holdTimerRef.current = setTimeout(() => {
-      holdTimerRef.current = null;
-      startRecording();
-    }, HOLD_THRESHOLD_MS);
-  }, [mode, startRecording]);
+  // Tap-or-hold: aceita os dois estilos no mesmo botão.
+  //  • Tap rápido (release < 300ms) → grava em modo contínuo, próximo tap para
+  //    (estilo câmera Android nativa)
+  //  • Press-and-hold (release ≥ 300ms) → grava enquanto segura, solta para
+  //    (estilo Instagram/WhatsApp)
+  const TAP_THRESHOLD_MS = 300;
+  const pressedAtRef = useRef<number>(0);
+  const startedAsHoldRef = useRef<boolean>(false);
 
-  const handlePressUp = useCallback(() => {
-    // Se ainda estava no período de "armando" — soltou antes da hora.
-    if (holdTimerRef.current) {
-      clearTimeout(holdTimerRef.current);
-      holdTimerRef.current = null;
-      setHoldHint(true);
-      if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
-      hintTimerRef.current = setTimeout(() => setHoldHint(false), 2500);
+  function handlePointerDown() {
+    if (mode === "idle") {
+      pressedAtRef.current = Date.now();
+      startedAsHoldRef.current = false;
+      startRecording();
       return;
     }
-    // Já estava gravando — solta = parar.
-    if (mode === "recording") stopRecording();
-  }, [mode, stopRecording]);
-
-  const handlePressCancel = useCallback(() => {
-    if (holdTimerRef.current) {
-      clearTimeout(holdTimerRef.current);
-      holdTimerRef.current = null;
+    if (mode === "recording" && !startedAsHoldRef.current) {
+      // Segundo tap (após tap inicial) → para a gravação contínua
+      stopRecording();
     }
-    if (mode === "recording") stopRecording();
-  }, [mode, stopRecording]);
+  }
+
+  function handlePointerUp() {
+    if (mode !== "recording") return;
+    const duration = Date.now() - pressedAtRef.current;
+    if (duration >= TAP_THRESHOLD_MS && !startedAsHoldRef.current) {
+      // Press-and-hold real (segurou e agora soltou) → para
+      startedAsHoldRef.current = true;
+      stopRecording();
+    }
+    // Tap rápido: deixa o recording continuar até o próximo tap.
+  }
+
+  function handlePointerCancel() {
+    if (mode === "recording" && !startedAsHoldRef.current) {
+      // Pointer saiu (drag/blur) durante hold real — para por segurança
+      const duration = Date.now() - pressedAtRef.current;
+      if (duration >= TAP_THRESHOLD_MS) {
+        startedAsHoldRef.current = true;
+        stopRecording();
+      }
+    }
+  }
 
   const resetRecording = () => {
     if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
@@ -234,40 +232,36 @@ export function VideoRecorder({ onVideoReady, donationId }: VideoRecorderProps) 
             )}
           </div>
 
-          <button
-            type="button"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              handlePressDown();
-            }}
-            onPointerUp={handlePressUp}
-            onPointerLeave={handlePressCancel}
-            onPointerCancel={handlePressCancel}
-            onContextMenu={(e) => e.preventDefault()}
-            className={`w-full flex items-center justify-center gap-2 text-white font-medium py-3 rounded-xl transition-colors select-none touch-none ${
-              mode === "recording"
-                ? "bg-red-500 hover:bg-red-600"
-                : "bg-primary hover:bg-primary/90"
-            }`}
-          >
-            {mode === "recording" ? (
-              <>
-                <StopCircle className="w-5 h-5" />
-                Gravando… solte para parar
-              </>
-            ) : (
-              <>
-                <Video className="w-5 h-5" />
-                Segure para gravar (até 10s)
-              </>
-            )}
-          </button>
-
-          {holdHint && (
-            <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3 text-sm text-center">
-              <span className="font-semibold">Segure</span> o botão para gravar — não solte enquanto fala.
-            </div>
-          )}
+          {/* Botão estilo câmera Android: bolinha → quadrado ao gravar.
+             Aceita tap (toque-pare) E hold (segure-solte) no mesmo botão. */}
+          <div className="flex flex-col items-center gap-2 pt-1">
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                handlePointerDown();
+              }}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerCancel}
+              onPointerCancel={handlePointerCancel}
+              onContextMenu={(e) => e.preventDefault()}
+              aria-label={mode === "recording" ? "Parar gravação" : "Iniciar gravação"}
+              className="relative w-16 h-16 rounded-full border-4 border-foreground/80 hover:border-foreground flex items-center justify-center transition-transform active:scale-95 select-none touch-none"
+            >
+              <span
+                className={`block bg-red-500 transition-all duration-200 ease-out ${
+                  mode === "recording"
+                    ? "w-6 h-6 rounded-[4px]"
+                    : "w-11 h-11 rounded-full"
+                }`}
+              />
+            </button>
+            <p className="text-xs text-foreground/65 select-none text-center">
+              {mode === "recording"
+                ? "Toque ou solte para parar"
+                : "Toque ou segure para gravar (até 10s)"}
+            </p>
+          </div>
         </div>
       )}
 
