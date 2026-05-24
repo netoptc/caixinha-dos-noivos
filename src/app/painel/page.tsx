@@ -187,7 +187,7 @@ export default async function DashboardPage() {
             Histórico de saques
           </h2>
         </div>
-        <WithdrawalHistory />
+        <WithdrawalHistory primaryColor={caixinha.primaryColor} />
       </section>
 
       {/* ============ DONATIONS LIST ============ */}
