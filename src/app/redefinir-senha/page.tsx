@@ -202,7 +202,7 @@ function ResetPasswordPageContent() {
               <label className="block text-sm font-semibold text-foreground mb-2">
                 Código de 6 dígitos
               </label>
-              <div className="flex justify-between gap-2">
+              <div className="flex justify-between gap-1.5 sm:gap-2">
                 {code.map((digit, idx) => (
                   <input
                     key={idx}
@@ -217,7 +217,7 @@ function ResetPasswordPageContent() {
                     onChange={(e) => setDigit(idx, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(idx, e)}
                     onPaste={handlePaste}
-                    className="w-12 h-14 rounded-xl bg-white border border-input focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 text-center text-2xl font-semibold text-foreground transition-colors"
+                    className="flex-1 min-w-0 max-w-[3.25rem] h-12 sm:h-14 rounded-xl bg-white border border-input focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 text-center text-xl sm:text-2xl font-semibold text-foreground transition-colors"
                   />
                 ))}
               </div>
