@@ -216,6 +216,9 @@ export function WithdrawCard({ fallbackTotal }: WithdrawCardProps) {
       setAnticipSubmitting(false);
       void fetchBalance();
       void fetchAnticipation();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("withdrawal:created"));
+      }
     } catch {
       setAnticipError("Sem conexão. Tente novamente.");
       setAnticipSubmitting(false);
@@ -272,6 +275,11 @@ export function WithdrawCard({ fallbackTotal }: WithdrawCardProps) {
       setDone(true);
       setSubmitting(false);
       void fetchBalance();
+      // Notifica componentes que listam saques (ex.: WithdrawalHistory) pra
+      // refetchar sem precisar de F5.
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("withdrawal:created"));
+      }
     } catch {
       setError("Sem conexão. Tente novamente em instantes.");
       setSubmitting(false);

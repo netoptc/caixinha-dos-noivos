@@ -75,10 +75,25 @@ export function WithdrawalHistory({
   const [items, setItems] = useState<Withdrawal[] | null>(null);
 
   useEffect(() => {
-    void fetch("/api/withdrawals")
-      .then((r) => (r.ok ? r.json() : { withdrawals: [] }))
-      .then((data) => setItems(data.withdrawals ?? []))
-      .catch(() => setItems([]));
+    let cancelled = false;
+    function load() {
+      void fetch("/api/withdrawals")
+        .then((r) => (r.ok ? r.json() : { withdrawals: [] }))
+        .then((data) => {
+          if (!cancelled) setItems(data.withdrawals ?? []);
+        })
+        .catch(() => {
+          if (!cancelled) setItems([]);
+        });
+    }
+    load();
+    // Refetch quando outro componente (WithdrawCard) sinaliza que criou um
+    // saque novo — evita ter que dar F5 pra ver o "Em processamento".
+    window.addEventListener("withdrawal:created", load);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("withdrawal:created", load);
+    };
   }, []);
 
   if (items === null) {
