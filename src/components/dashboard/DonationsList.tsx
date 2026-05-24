@@ -6,10 +6,10 @@ import { VideoModal } from "@/components/caixinha/VideoModal";
 import { Eye, Gift } from "lucide-react";
 
 const statusMap = {
-  PENDING: { label: "Pendente", tone: "muted" as const },
-  CONFIRMED: { label: "Confirmado", tone: "primary" as const },
-  FAILED: { label: "Recusado", tone: "destructive" as const },
-  REFUNDED: { label: "Estornado", tone: "muted" as const },
+  PENDING: { label: "Pendente", tone: "pending" as const },
+  CONFIRMED: { label: "Confirmado", tone: "success" as const },
+  FAILED: { label: "Recusado", tone: "danger" as const },
+  REFUNDED: { label: "Estornado", tone: "neutral" as const },
 };
 
 const methodMap = {
@@ -238,27 +238,66 @@ export function DonationsList({
   );
 }
 
+type StatusTone = "pending" | "success" | "danger" | "neutral";
+
 function StatusBadge({
   children,
   tone,
 }: {
   children: React.ReactNode;
-  tone: "primary" | "muted" | "destructive";
+  tone: StatusTone;
 }) {
-  const styles: Record<typeof tone, { bg: string; color: string }> = {
-    primary: { bg: "hsl(var(--primary) / 0.12)", color: "hsl(var(--primary))" },
-    muted: { bg: "hsl(var(--muted))", color: "hsl(var(--muted-foreground))" },
-    destructive: {
-      bg: "hsl(var(--destructive) / 0.10)",
-      color: "hsl(var(--destructive))",
+  const styles: Record<
+    StatusTone,
+    { bg: string; color: string; border: string; dot: string; pulse: boolean }
+  > = {
+    pending: {
+      bg: "#fef6dd",
+      color: "#854d0e",
+      border: "#f6c75e66",
+      dot: "#eab308",
+      pulse: true,
+    },
+    success: {
+      bg: "#dcfce7",
+      color: "#166534",
+      border: "#16a34a40",
+      dot: "#16a34a",
+      pulse: false,
+    },
+    danger: {
+      bg: "#fee2e2",
+      color: "#991b1b",
+      border: "#dc262640",
+      dot: "#dc2626",
+      pulse: false,
+    },
+    neutral: {
+      bg: "#f1f5f9",
+      color: "#475569",
+      border: "#94a3b840",
+      dot: "#94a3b8",
+      pulse: false,
     },
   };
-  const { bg, color } = styles[tone];
+  const { bg, color, border, dot, pulse } = styles[tone];
   return (
     <span
-      className="inline-block text-[0.65rem] font-semibold leading-none py-1 px-2 rounded-full"
-      style={{ backgroundColor: bg, color }}
+      className="inline-flex items-center gap-1.5 text-[0.65rem] font-semibold leading-none py-1 pl-1.5 pr-2 rounded-full border whitespace-nowrap"
+      style={{ backgroundColor: bg, color, borderColor: border }}
     >
+      <span className="relative flex items-center justify-center w-1.5 h-1.5">
+        {pulse && (
+          <span
+            className="absolute inset-0 rounded-full animate-ping opacity-75"
+            style={{ backgroundColor: dot }}
+          />
+        )}
+        <span
+          className="relative w-1.5 h-1.5 rounded-full"
+          style={{ backgroundColor: dot }}
+        />
+      </span>
       {children}
     </span>
   );

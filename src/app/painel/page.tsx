@@ -28,7 +28,11 @@ export default async function DashboardPage() {
     include: {
       caixinha: {
         include: {
+          // Só doações confirmadas aparecem na lista. PENDING é tentativa de
+          // pagamento (PIX gerado e não pago, cartão recusado, doador trocou
+          // de método, recarregou a tela etc.) — não conta como "recebida".
           donations: {
+            where: { paymentStatus: "CONFIRMED" },
             orderBy: { createdAt: "desc" },
           },
           _count: {

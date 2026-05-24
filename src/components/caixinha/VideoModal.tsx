@@ -101,6 +101,21 @@ export function VideoModal({
       }, 300);
     };
 
+    const tick = () => {
+      if (cancelled) return;
+      const dur = knownDuration || video.duration;
+      if (dur && isFinite(dur) && dur > 0) {
+        const pct = Math.min(100, (video.currentTime / dur) * 100);
+        setProgress(pct);
+        // Fallback caso 'ended' não dispare (acontece com webm sem header
+        // de duração depois do hack abaixo).
+        if (!video.paused && video.currentTime >= dur - 0.15) {
+          advance();
+        }
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+
     const startPlayback = () => {
       if (cancelled) return;
       video.muted = true;
@@ -109,59 +124,77 @@ export function VideoModal({
       rafId = requestAnimationFrame(tick);
     };
 
-    const tick = () => {
-      if (cancelled) return;
-      const dur = knownDuration || video.duration;
-      if (dur && isFinite(dur) && dur > 0) {
-        const pct = Math.min(100, (video.currentTime / dur) * 100);
-        setProgress(pct);
-        // Fallback: alguns navegadores não disparam 'ended' depois do hack de
-        // duração — então avançamos quando estiver praticamente no fim.
-        if (!video.paused && video.currentTime >= dur - 0.15) {
-          advance();
-        }
-      }
-      rafId = requestAnimationFrame(tick);
-    };
-
     const handleEnded = () => advance();
 
-    // WebM vindo do MediaRecorder não traz cue de duração no header,
-    // então video.duration retorna Infinity. Forçamos o cálculo seekando
-    // pra um tempo gigante; o navegador então atualiza para o valor real.
-    const fixDurationIfNeeded = () => {
+    // WebM gravado pelo MediaRecorder não traz cue de duração no header
+    // (video.duration vira Infinity). O hack é seekar pra um tempo
+    // absurdamente alto pra forçar o decoder a calcular a duração real.
+    // Pausamos antes pra evitar corrida com o autoplay — sem isso, o
+    // timeupdate natural do autoplay às vezes dispara antes do seek e
+    // a duração nunca é capturada (problema do "primeiro vídeo").
+    const fixDurationThenPlay = () => {
       if (durationFixed) return;
       durationFixed = true;
-      if (!isFinite(video.duration) || video.duration === 0) {
-        const onTimeUpdate = () => {
-          video.removeEventListener("timeupdate", onTimeUpdate);
-          if (isFinite(video.duration) && video.duration > 0) {
-            knownDuration = video.duration;
-          }
+
+      if (isFinite(video.duration) && video.duration > 0) {
+        knownDuration = video.duration;
+        startPlayback();
+        return;
+      }
+
+      try {
+        video.pause();
+      } catch {}
+
+      const cleanup = () => {
+        video.removeEventListener("durationchange", onDurationChange);
+        video.removeEventListener("loadeddata", onLoadedData);
+      };
+
+      const onDurationChange = () => {
+        if (isFinite(video.duration) && video.duration > 0) {
+          knownDuration = video.duration;
+          cleanup();
           try {
             video.currentTime = 0;
           } catch {}
           startPlayback();
-        };
-        video.addEventListener("timeupdate", onTimeUpdate);
-        try {
-          video.currentTime = 1e101;
-        } catch {
+        }
+      };
+
+      // Em alguns navegadores o seek pra 1e101 não dispara 'durationchange'
+      // mas dispara 'loadeddata' depois de re-bufferizar. Cobrimos os dois.
+      const onLoadedData = () => {
+        if (isFinite(video.duration) && video.duration > 0) {
+          knownDuration = video.duration;
+          cleanup();
+          try {
+            video.currentTime = 0;
+          } catch {}
           startPlayback();
         }
-      } else {
-        knownDuration = video.duration;
+      };
+
+      video.addEventListener("durationchange", onDurationChange);
+      video.addEventListener("loadeddata", onLoadedData);
+
+      try {
+        video.currentTime = 1e101;
+      } catch {
+        cleanup();
         startPlayback();
       }
     };
 
-    const handleLoadedMeta = () => fixDurationIfNeeded();
+    const handleLoadedMeta = () => fixDurationThenPlay();
 
     video.addEventListener("loadedmetadata", handleLoadedMeta);
     video.addEventListener("ended", handleEnded);
 
+    // Se o metadata já carregou antes do efeito (cache do navegador),
+    // dispara o hack manualmente.
     if (video.readyState >= 1) {
-      fixDurationIfNeeded();
+      fixDurationThenPlay();
     }
 
     return () => {
@@ -370,7 +403,7 @@ export function VideoModal({
               ref={videoRef}
               src={current.videoUrl}
               className="w-full h-full object-cover cursor-pointer"
-              autoPlay
+              preload="auto"
               playsInline
               muted={muted}
               onClick={togglePause}

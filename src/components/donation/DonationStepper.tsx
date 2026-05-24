@@ -109,6 +109,7 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
   const [donorName, setDonorName] = useState("");
   const [donorPhone, setDonorPhone] = useState("");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoUploading, setVideoUploading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [donationId, setDonationId] = useState<string | null>(null);
   const [donationTotal, setDonationTotal] = useState<number>(0);
@@ -151,6 +152,13 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
   // Step 3 (vídeo) é opcional — não tem validação obrigatória.
 
   async function createDonationAndProceed(method: PaymentMethod) {
+    // Se já temos uma doação aberta com o mesmo método (doador voltou e
+    // re-selecionou), reaproveita em vez de criar outra PENDING duplicada.
+    if (donationId && paymentMethod === method) {
+      setStep(method === "PIX" ? "pix" : "card");
+      return;
+    }
+
     setCreatingDonation(true);
     try {
       const res = await fetch("/api/donations", {
@@ -214,8 +222,10 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
         return;
       case "pix":
       case "card":
+        // Mantém donationId+paymentMethod no state. Se o doador re-selecionar
+        // o mesmo método em "method", reaproveitamos a doação existente em
+        // vez de criar outra PENDING.
         setStep("method");
-        setDonationId(null);
         return;
     }
   }
@@ -473,14 +483,23 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
           <div>
             <div className="flex items-baseline justify-between mb-2">
               <label className="block text-sm font-semibold text-foreground">
-                Vídeo (até 10s)
+                Vídeo (até 1min)
               </label>
-              {videoUrl && (
+              {videoUrl && !videoUploading && (
                 <span
                   className="text-xs font-semibold"
                   style={{ color: primaryColor }}
                 >
                   Vídeo anexado ✓
+                </span>
+              )}
+              {videoUploading && (
+                <span
+                  className="text-xs font-semibold inline-flex items-center gap-1.5"
+                  style={{ color: primaryColor }}
+                >
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Anexando…
                 </span>
               )}
             </div>
@@ -489,6 +508,7 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
             </p>
             <MediaCapture
               onVideoReady={setVideoUrl}
+              onUploadingChange={setVideoUploading}
               primaryColor={primaryColor}
             />
           </div>
@@ -496,14 +516,24 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
           <div className="flex flex-col gap-2">
             <button
               onClick={() => setStep("method")}
-              className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-white text-base font-semibold transition-all hover:shadow-xl hover:-translate-y-0.5 shadow-lg"
+              disabled={videoUploading}
+              className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-white text-base font-semibold transition-all hover:shadow-xl hover:-translate-y-0.5 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg"
               style={{
                 backgroundColor: primaryColor,
                 boxShadow: `0 12px 28px -10px ${primaryColor}80`,
               }}
             >
-              Continuar
-              <ArrowRight className="w-4 h-4" />
+              {videoUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Anexando vídeo…
+                </>
+              ) : (
+                <>
+                  Continuar
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
             <button
               onClick={() => {
@@ -511,7 +541,8 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
                 setStep("method");
               }}
               type="button"
-              className="w-full px-6 py-3 rounded-2xl text-sm font-semibold text-foreground/65 hover:text-foreground hover:bg-[#fbf7ee] transition-colors"
+              disabled={videoUploading}
+              className="w-full px-6 py-3 rounded-2xl text-sm font-semibold text-foreground/65 hover:text-foreground hover:bg-[#fbf7ee] transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-foreground/65"
             >
               Pular esta etapa
             </button>

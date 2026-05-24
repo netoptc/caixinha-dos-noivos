@@ -8,6 +8,9 @@ type Mode = "idle" | "camera" | "recording" | "uploading" | "done";
 
 interface MediaCaptureProps {
   onVideoReady: (url: string | null) => void;
+  /** Disparado quando o vídeo está sendo enviado (anexado). Útil pra
+   *  desabilitar botões de avançar/pular enquanto o upload acontece. */
+  onUploadingChange?: (uploading: boolean) => void;
   primaryColor?: string;
 }
 
@@ -15,6 +18,7 @@ const MAX_SECONDS = 60;
 
 export function MediaCapture({
   onVideoReady,
+  onUploadingChange,
   primaryColor = "#d4a017",
 }: MediaCaptureProps) {
   const [mode, setMode] = useState<Mode>("idle");
@@ -36,6 +40,10 @@ export function MediaCapture({
       };
     }
   }, [mode]);
+
+  useEffect(() => {
+    onUploadingChange?.(mode === "uploading");
+  }, [mode, onUploadingChange]);
 
   const liveVideoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
