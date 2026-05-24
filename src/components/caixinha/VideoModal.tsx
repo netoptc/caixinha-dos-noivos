@@ -5,15 +5,24 @@ import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight, Play, Heart, Download, Volume2, VolumeX } from "lucide-react";
 import { formatWeddingDate } from "@/lib/utils";
 
-interface VideoItem {
-  id: string;
-  donorName: string;
-  amount: number;
-  videoUrl: string;
-}
+export type StoryItem =
+  | {
+      id: string;
+      donorName: string;
+      amount: number;
+      type: "video";
+      videoUrl: string;
+    }
+  | {
+      id: string;
+      donorName: string;
+      amount: number;
+      type: "text";
+      message: string;
+    };
 
 interface VideoModalProps {
-  videos: VideoItem[];
+  videos: StoryItem[];
   initialIndex?: number;
   primaryColor?: string;
   coupleNames?: string;
@@ -22,6 +31,10 @@ interface VideoModalProps {
   /** Quando true, exibe o botão de baixar vídeo. Use apenas no painel dos noivos. */
   canDownload?: boolean;
   onClose: () => void;
+}
+
+function getTextStoryDurationMs(message: string) {
+  return Math.min(10_000, Math.max(5_000, message.length * 60));
 }
 
 export function VideoModal({
@@ -40,6 +53,10 @@ export function VideoModal({
   const [downloadLoading, setDownloadLoading] = useState(false);
   const [muted, setMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const pausedRef = useRef(false);
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
 
   // Garante que portal só rende no client (não SSR)
   useEffect(() => {
@@ -82,13 +99,8 @@ export function VideoModal({
     setProgress(0);
     setPaused(false);
 
-    const video = videoRef.current;
-    if (!video) return;
-
     let rafId = 0;
     let cancelled = false;
-    let knownDuration = 0;
-    let durationFixed = false;
     let advanceTimer: ReturnType<typeof setTimeout> | null = null;
     let advanced = false;
 
@@ -100,6 +112,53 @@ export function VideoModal({
         if (!cancelled) goNext();
       }, 300);
     };
+
+    // ─── Caminho TEXTO: timer linear baseado em comprimento ───
+    if (current.type === "text") {
+      const durationMs = getTextStoryDurationMs(current.message);
+      let startedAt = performance.now();
+      let elapsedAccum = 0;
+      let lastPausedSnapshot = false;
+
+      const tickText = (now: number) => {
+        if (cancelled) return;
+        if (pausedRef.current) {
+          if (!lastPausedSnapshot) {
+            // Acabou de pausar: congela o acumulado
+            elapsedAccum += now - startedAt;
+            lastPausedSnapshot = true;
+          }
+        } else {
+          if (lastPausedSnapshot) {
+            // Acabou de retomar: reinicia o relógio
+            startedAt = now;
+            lastPausedSnapshot = false;
+          }
+          const elapsed = elapsedAccum + (now - startedAt);
+          const pct = Math.min(100, (elapsed / durationMs) * 100);
+          setProgress(pct);
+          if (elapsed >= durationMs) {
+            advance();
+            return;
+          }
+        }
+        rafId = requestAnimationFrame(tickText);
+      };
+      rafId = requestAnimationFrame(tickText);
+
+      return () => {
+        cancelled = true;
+        cancelAnimationFrame(rafId);
+        if (advanceTimer) clearTimeout(advanceTimer);
+      };
+    }
+
+    // ─── Caminho VÍDEO ───
+    const video = videoRef.current;
+    if (!video) return;
+
+    let knownDuration = 0;
+    let durationFixed = false;
 
     const tick = () => {
       if (cancelled) return;
@@ -204,7 +263,7 @@ export function VideoModal({
       video.removeEventListener("loadedmetadata", handleLoadedMeta);
       video.removeEventListener("ended", handleEnded);
     };
-  }, [index, goNext]);
+  }, [index, goNext, current]);
 
   function toggleMute(e: React.MouseEvent) {
     e.stopPropagation();
@@ -222,6 +281,7 @@ export function VideoModal({
   async function handleDownload(e?: React.MouseEvent) {
     e?.stopPropagation();
     if (downloadLoading) return;
+    if (current.type !== "video") return;
     setDownloadLoading(true);
 
     try {
@@ -245,6 +305,10 @@ export function VideoModal({
   }
 
   function togglePause() {
+    if (current.type === "text") {
+      setPaused((p) => !p);
+      return;
+    }
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
@@ -327,15 +391,17 @@ export function VideoModal({
               {index + 1} de {videos.length}
             </span>
             <div className="flex items-center gap-1">
-              <button
-                onClick={toggleMute}
-                className="w-9 h-9 flex items-center justify-center text-white/80 hover:text-white rounded-full hover:bg-white/15 transition-colors"
-                aria-label={muted ? "Ativar som" : "Desativar som"}
-                title={muted ? "Ativar som" : "Desativar som"}
-              >
-                {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-              </button>
-              {canDownload && (
+              {current.type === "video" && (
+                <button
+                  onClick={toggleMute}
+                  className="w-9 h-9 flex items-center justify-center text-white/80 hover:text-white rounded-full hover:bg-white/15 transition-colors"
+                  aria-label={muted ? "Ativar som" : "Desativar som"}
+                  title={muted ? "Ativar som" : "Desativar som"}
+                >
+                  {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                </button>
+              )}
+              {canDownload && current.type === "video" && (
                 <button
                   onClick={handleDownload}
                   disabled={downloadLoading}
@@ -398,16 +464,25 @@ export function VideoModal({
                 "0 0 32px rgba(255,255,255,0.15), 0 20px 50px rgba(0,0,0,0.25)",
             }}
           >
-            <video
-              key={current.id}
-              ref={videoRef}
-              src={current.videoUrl}
-              className="w-full h-full object-cover cursor-pointer"
-              preload="auto"
-              playsInline
-              muted={muted}
-              onClick={togglePause}
-            />
+            {current.type === "video" ? (
+              <video
+                key={current.id}
+                ref={videoRef}
+                src={current.videoUrl}
+                className="w-full h-full object-cover cursor-pointer"
+                preload="auto"
+                playsInline
+                muted={muted}
+                onClick={togglePause}
+              />
+            ) : (
+              <TextStory
+                key={current.id}
+                message={current.message}
+                primaryColor={primaryColor}
+                onClick={togglePause}
+              />
+            )}
             {paused && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div
@@ -483,4 +558,59 @@ export function VideoModal({
 
   // Portal direto pra body — escapa de qualquer stacking context dos pais
   return createPortal(modal, document.body);
+}
+
+function TextStory({
+  message,
+  primaryColor,
+  onClick,
+}: {
+  message: string;
+  primaryColor: string;
+  onClick: () => void;
+}) {
+  // Tamanho da fonte responde ao comprimento do texto — mensagens curtas
+  // ganham fonte maior, mensagens longas reduzem para sempre caber.
+  const len = message.length;
+  const fontSize =
+    len <= 60
+      ? "clamp(1.75rem, 6vw, 2.25rem)"
+      : len <= 140
+        ? "clamp(1.4rem, 5vw, 1.85rem)"
+        : "clamp(1.15rem, 4.2vw, 1.55rem)";
+
+  return (
+    <div
+      onClick={onClick}
+      className="w-full h-full cursor-pointer flex items-center justify-center px-6 py-8 relative"
+      style={{
+        background: `linear-gradient(155deg, ${primaryColor} 0%, ${primaryColor}cc 55%, ${primaryColor}99 100%)`,
+      }}
+    >
+      <div
+        className="absolute top-6 left-6 text-white/30 font-serif leading-none select-none"
+        style={{ fontSize: "5rem", fontFamily: "Georgia, serif" }}
+        aria-hidden
+      >
+        “
+      </div>
+      <p
+        className="text-white text-center font-medium leading-snug max-w-full break-words"
+        style={{
+          fontFamily: "Georgia, serif",
+          fontSize,
+          textShadow: "0 2px 12px rgba(0,0,0,0.25)",
+        }}
+      >
+        {message}
+      </p>
+      <div
+        className="absolute bottom-6 right-6 text-white/30 font-serif leading-none select-none"
+        style={{ fontSize: "5rem", fontFamily: "Georgia, serif" }}
+        aria-hidden
+      >
+        ”
+      </div>
+    </div>
+  );
 }

@@ -8,6 +8,8 @@ import {
   Loader2,
   AlertCircle,
   CreditCard,
+  Video,
+  MessageSquareText,
 } from "lucide-react";
 
 // Ícone PIX inline (usa currentColor pra puxar a cor primária da caixinha)
@@ -50,7 +52,10 @@ interface DonationStepperProps {
 }
 
 type PaymentMethod = "PIX" | "CREDIT_CARD";
-type Step = "amount" | "info" | "video" | "method" | "pix" | "card";
+type Step = "amount" | "info" | "message" | "method" | "pix" | "card";
+type MessageMode = "video" | "text";
+
+const MAX_MESSAGE_LENGTH = 280;
 
 interface GatewayFees {
   pixFixed: number;
@@ -100,10 +105,10 @@ function calcTotal(
   };
 }
 
-const STEPS: { id: "amount" | "info" | "video" | "method"; label: string }[] = [
+const STEPS: { id: "amount" | "info" | "message" | "method"; label: string }[] = [
   { id: "amount", label: "Valor" },
   { id: "info", label: "Sobre você" },
-  { id: "video", label: "Vídeo" },
+  { id: "message", label: "Mensagem" },
   { id: "method", label: "Pagamento" },
 ];
 
@@ -115,8 +120,10 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
   const [customMode, setCustomMode] = useState(false);
   const [donorName, setDonorName] = useState("");
   const [donorPhone, setDonorPhone] = useState("");
+  const [messageMode, setMessageMode] = useState<MessageMode | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoUploading, setVideoUploading] = useState(false);
+  const [textMessage, setTextMessage] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [donationId, setDonationId] = useState<string | null>(null);
   const [donationTotal, setDonationTotal] = useState<number>(0);
@@ -156,7 +163,41 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
     return Object.keys(errs).length === 0;
   }
 
-  // Step 3 (vídeo) é opcional — não tem validação obrigatória.
+  function validateStep3() {
+    if (messageMode === "video") {
+      if (!videoUrl) {
+        setErrors({
+          message: "Grave um vídeo ou troque para mensagem em texto.",
+        });
+        return false;
+      }
+    } else if (messageMode === "text") {
+      const trimmed = textMessage.trim();
+      if (trimmed.length < 1) {
+        setErrors({ message: "Escreva uma mensagem para o casal." });
+        return false;
+      }
+      if (trimmed.length > MAX_MESSAGE_LENGTH) {
+        setErrors({ message: `Máximo de ${MAX_MESSAGE_LENGTH} caracteres.` });
+        return false;
+      }
+    } else {
+      setErrors({ message: "Escolha como deixar sua mensagem." });
+      return false;
+    }
+    setErrors({});
+    return true;
+  }
+
+  function selectMessageMode(mode: MessageMode) {
+    setMessageMode(mode);
+    setErrors({});
+    if (mode === "video") {
+      setTextMessage("");
+    } else {
+      setVideoUrl(null);
+    }
+  }
 
   async function createDonationAndProceed(method: PaymentMethod) {
     // Se já temos uma doação aberta com o mesmo método (doador voltou e
@@ -176,7 +217,9 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
           donorName: donorName.trim(),
           donorPhone: donorPhone.replace(/\D/g, ""),
           amount: finalAmount,
-          videoUrl: videoUrl || undefined,
+          videoUrl: messageMode === "video" ? videoUrl || undefined : undefined,
+          message:
+            messageMode === "text" ? textMessage.trim() || undefined : undefined,
           paymentMethod: method,
         }),
       });
@@ -210,7 +253,7 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
   }
 
   const indicatorPos: 0 | 1 | 2 | 3 =
-    step === "amount" ? 0 : step === "info" ? 1 : step === "video" ? 2 : 3;
+    step === "amount" ? 0 : step === "info" ? 1 : step === "message" ? 2 : 3;
 
   function goBack() {
     setErrors({});
@@ -221,11 +264,11 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
       case "info":
         setStep("amount");
         return;
-      case "video":
+      case "message":
         setStep("info");
         return;
       case "method":
-        setStep("video");
+        setStep("message");
         return;
       case "pix":
       case "card":
@@ -456,7 +499,7 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
           />
 
           <button
-            onClick={() => validateStep2() && setStep("video")}
+            onClick={() => validateStep2() && setStep("message")}
             className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-white text-base font-semibold transition-all hover:shadow-xl hover:-translate-y-0.5 shadow-lg"
             style={{
               backgroundColor: primaryColor,
@@ -469,8 +512,8 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
         </div>
       )}
 
-      {/* ============ STEP: VIDEO ============ */}
-      {step === "video" && (
+      {/* ============ STEP: MESSAGE ============ */}
+      {step === "message" && (
         <div className="space-y-6 animate-fade-in">
           <div>
             <p
@@ -480,80 +523,176 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
               Passo 3
             </p>
             <h2 className="font-display text-2xl md:text-3xl text-foreground leading-tight">
-              Grave um vídeo
+              Mensagem
             </h2>
             <p className="text-sm text-foreground/65 mt-2">
-              Deixe uma mensagem em vídeo pro casal. É opcional.
+              Deixe uma mensagem em vídeo ou uma mensagem em texto para o casal.
             </p>
           </div>
 
-          <div>
-            <div className="flex items-baseline justify-between mb-2">
-              <label className="block text-sm font-semibold text-foreground">
-                Vídeo (até 1min)
-              </label>
-              {videoUrl && !videoUploading && (
-                <span
-                  className="text-xs font-semibold"
-                  style={{ color: primaryColor }}
+          {!messageMode && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => selectMessageMode("video")}
+                className="rounded-2xl bg-white p-5 text-left transition-all hover:-translate-y-0.5 hover:shadow-md"
+                style={{ border: `1px solid hsl(var(--border) / 0.6)` }}
+              >
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
+                  style={{
+                    backgroundColor: `${primaryColor}15`,
+                    color: primaryColor,
+                  }}
                 >
-                  Vídeo anexado ✓
-                </span>
-              )}
-              {videoUploading && (
-                <span
-                  className="text-xs font-semibold inline-flex items-center gap-1.5"
-                  style={{ color: primaryColor }}
+                  <Video className="w-5 h-5" />
+                </div>
+                <p className="text-base font-semibold text-foreground">
+                  Mensagem em vídeo
+                </p>
+                <p className="text-xs text-foreground/65 mt-1">
+                  Grave até 1 minuto pela câmera.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => selectMessageMode("text")}
+                className="rounded-2xl bg-white p-5 text-left transition-all hover:-translate-y-0.5 hover:shadow-md"
+                style={{ border: `1px solid hsl(var(--border) / 0.6)` }}
+              >
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
+                  style={{
+                    backgroundColor: `${primaryColor}15`,
+                    color: primaryColor,
+                  }}
                 >
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  Anexando…
-                </span>
-              )}
+                  <MessageSquareText className="w-5 h-5" />
+                </div>
+                <p className="text-base font-semibold text-foreground">
+                  Mensagem em texto
+                </p>
+                <p className="text-xs text-foreground/65 mt-1">
+                  Escreva até {MAX_MESSAGE_LENGTH} caracteres.
+                </p>
+              </button>
             </div>
-            <p className="text-xs text-foreground/55 mb-3">
-              Grave um vídeo curto direto pela câmera.
-            </p>
-            <MediaCapture
-              onVideoReady={setVideoUrl}
-              onUploadingChange={setVideoUploading}
-              primaryColor={primaryColor}
-            />
-          </div>
+          )}
 
-          <div className="flex flex-col gap-2">
-            <button
-              onClick={() => setStep("method")}
-              disabled={videoUploading}
-              className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-white text-base font-semibold transition-all hover:shadow-xl hover:-translate-y-0.5 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg"
-              style={{
-                backgroundColor: primaryColor,
-                boxShadow: `0 12px 28px -10px ${primaryColor}80`,
-              }}
-            >
-              {videoUploading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Anexando vídeo…
-                </>
-              ) : (
-                <>
-                  Continuar
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-            <button
-              onClick={() => {
-                setVideoUrl(null);
-                setStep("method");
-              }}
-              type="button"
-              disabled={videoUploading}
-              className="w-full px-6 py-3 rounded-2xl text-sm font-semibold text-foreground/65 hover:text-foreground hover:bg-[#fbf7ee] transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-foreground/65"
-            >
-              Pular esta etapa
-            </button>
-          </div>
+          {messageMode === "video" && (
+            <div className="space-y-3">
+              <div className="flex items-baseline justify-between">
+                <label className="block text-sm font-semibold text-foreground">
+                  Vídeo (até 1min)
+                </label>
+                {videoUrl && !videoUploading && (
+                  <span
+                    className="text-xs font-semibold"
+                    style={{ color: primaryColor }}
+                  >
+                    Vídeo anexado ✓
+                  </span>
+                )}
+                {videoUploading && (
+                  <span
+                    className="text-xs font-semibold inline-flex items-center gap-1.5"
+                    style={{ color: primaryColor }}
+                  >
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Anexando…
+                  </span>
+                )}
+              </div>
+              <MediaCapture
+                onVideoReady={setVideoUrl}
+                onUploadingChange={setVideoUploading}
+                primaryColor={primaryColor}
+              />
+              <button
+                type="button"
+                onClick={() => selectMessageMode("text")}
+                disabled={videoUploading}
+                className="text-xs font-semibold text-foreground/65 hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
+              >
+                <MessageSquareText className="w-3.5 h-3.5" />
+                Prefiro escrever uma mensagem
+              </button>
+            </div>
+          )}
+
+          {messageMode === "text" && (
+            <div className="space-y-3">
+              <div className="flex items-baseline justify-between">
+                <label
+                  htmlFor="donation-text-message"
+                  className="block text-sm font-semibold text-foreground"
+                >
+                  Sua mensagem
+                </label>
+                <span
+                  className="text-xs tabular-nums"
+                  style={{
+                    color:
+                      textMessage.length > MAX_MESSAGE_LENGTH
+                        ? "hsl(var(--destructive))"
+                        : "hsl(var(--foreground) / 0.55)",
+                  }}
+                >
+                  {textMessage.length}/{MAX_MESSAGE_LENGTH}
+                </span>
+              </div>
+              <textarea
+                id="donation-text-message"
+                value={textMessage}
+                onChange={(e) => {
+                  setTextMessage(e.target.value.slice(0, MAX_MESSAGE_LENGTH));
+                  if (errors.message) setErrors({});
+                }}
+                rows={5}
+                maxLength={MAX_MESSAGE_LENGTH}
+                placeholder="Escreva uma mensagem carinhosa pro casal…"
+                className="w-full rounded-xl bg-white border border-input focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/50 transition-colors resize-none"
+              />
+              <button
+                type="button"
+                onClick={() => selectMessageMode("video")}
+                className="text-xs font-semibold text-foreground/65 hover:text-foreground transition-colors inline-flex items-center gap-1"
+              >
+                <Video className="w-3.5 h-3.5" />
+                Prefiro gravar um vídeo
+              </button>
+            </div>
+          )}
+
+          {errors.message && (
+            <p className="text-xs text-destructive flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              {errors.message}
+            </p>
+          )}
+
+          <button
+            onClick={() => validateStep3() && setStep("method")}
+            disabled={videoUploading}
+            className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-white text-base font-semibold transition-all hover:shadow-xl hover:-translate-y-0.5 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg"
+            style={{
+              backgroundColor: primaryColor,
+              boxShadow: `0 12px 28px -10px ${primaryColor}80`,
+            }}
+          >
+            {videoUploading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Anexando vídeo…
+              </>
+            ) : (
+              <>
+                Continuar
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
         </div>
       )}
 

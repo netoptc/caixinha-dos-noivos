@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatCurrency, formatWeddingDate } from "@/lib/utils";
-import { VideoModal } from "./VideoModal";
+import { VideoModal, type StoryItem } from "./VideoModal";
 
 interface Donor {
   id: string;
@@ -34,21 +34,33 @@ export function DonorRanking({
   limit = 10,
   showAmounts = true,
 }: DonorRankingProps) {
-  const [videoIndex, setVideoIndex] = useState<number | null>(null);
+  const [storyIndex, setStoryIndex] = useState<number | null>(null);
 
   const sortedDonors = [...donors]
     .sort((a, b) => b.amount - a.amount)
     .slice(0, limit);
 
-  // Apenas doadores que gravaram vídeo aparecem no carrossel/modal de mensagens
-  const videos = sortedDonors
-    .filter((d): d is Donor & { videoUrl: string } => !!d.videoUrl)
-    .map((d) => ({
-      id: d.id,
-      donorName: d.donorName,
-      amount: d.amount,
-      videoUrl: d.videoUrl,
-    }));
+  // Doadores com vídeo OU mensagem de texto aparecem no carrossel de stories.
+  const stories: StoryItem[] = sortedDonors
+    .filter((d) => !!d.videoUrl || (d.message && d.message.trim().length > 0))
+    .map((d): StoryItem => {
+      if (d.videoUrl) {
+        return {
+          id: d.id,
+          donorName: d.donorName,
+          amount: d.amount,
+          type: "video",
+          videoUrl: d.videoUrl,
+        };
+      }
+      return {
+        id: d.id,
+        donorName: d.donorName,
+        amount: d.amount,
+        type: "text",
+        message: d.message!.trim(),
+      };
+    });
 
   function getInitials(name: string) {
     return name
@@ -74,28 +86,28 @@ export function DonorRanking({
 
   return (
     <>
-      {videoIndex !== null && (
+      {storyIndex !== null && (
         <VideoModal
-          videos={videos}
-          initialIndex={videoIndex}
+          videos={stories}
+          initialIndex={storyIndex}
           primaryColor={primaryColor}
           coupleNames={coupleNames}
           weddingDate={weddingDate}
-          onClose={() => setVideoIndex(null)}
+          onClose={() => setStoryIndex(null)}
         />
       )}
 
       {/* Carrossel de mensagens */}
-      {videos.length > 0 && (
+      {stories.length > 0 && (
         <div className="mb-5">
           <p className="text-[11px] font-semibold text-foreground/60 mb-3">
             Mensagens
           </p>
           <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-2 px-2 py-2">
-            {videos.map((video, i) => (
+            {stories.map((story, i) => (
               <button
-                key={video.id}
-                onClick={() => setVideoIndex(i)}
+                key={story.id}
+                onClick={() => setStoryIndex(i)}
                 className="flex flex-col items-center gap-1.5 flex-shrink-0 group"
               >
                 <div
@@ -104,21 +116,36 @@ export function DonorRanking({
                 >
                   <div className="bg-white p-[2px] rounded-full">
                     <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden flex items-center justify-center">
-                      <video
-                        src={video.videoUrl}
-                        className="w-full h-full object-cover"
-                        muted
-                        playsInline
-                        preload="metadata"
-                        onLoadedMetadata={(e) => {
-                          (e.currentTarget as HTMLVideoElement).currentTime = 0.5;
-                        }}
-                      />
+                      {story.type === "video" ? (
+                        <video
+                          src={story.videoUrl}
+                          className="w-full h-full object-cover"
+                          muted
+                          playsInline
+                          preload="metadata"
+                          onLoadedMetadata={(e) => {
+                            (e.currentTarget as HTMLVideoElement).currentTime = 0.5;
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className="w-full h-full flex items-center justify-center text-center px-1.5 text-white font-medium leading-[1.1]"
+                          style={{
+                            background: `linear-gradient(155deg, ${primaryColor} 0%, ${primaryColor}cc 100%)`,
+                            fontSize: "9px",
+                            fontFamily: "Georgia, serif",
+                          }}
+                        >
+                          <span className="line-clamp-3">
+                            {story.message}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
                 <span className="text-[11px] text-foreground/70 max-w-[56px] truncate text-center">
-                  {video.donorName.split(" ")[0]}
+                  {story.donorName.split(" ")[0]}
                 </span>
               </button>
             ))}
@@ -131,6 +158,9 @@ export function DonorRanking({
         {sortedDonors.map((donor, index) => {
           const isTop3 = index < 3;
           const hasVideo = !!donor.videoUrl;
+          const hasText =
+            !hasVideo && !!donor.message && donor.message.trim().length > 0;
+          const hasStory = hasVideo || hasText;
           const initials = getInitials(donor.donorName);
 
           return (
@@ -168,12 +198,12 @@ export function DonorRanking({
                 </span>
               </div>
 
-              {/* Avatar — com ring dourado SÓ se tiver vídeo (clica e abre modal) */}
-              {hasVideo ? (
+              {/* Avatar — com ring colorido se tiver mensagem (vídeo ou texto); clica e abre modal */}
+              {hasStory ? (
                 <button
                   onClick={() => {
-                    const idx = videos.findIndex((v) => v.id === donor.id);
-                    if (idx !== -1) setVideoIndex(idx);
+                    const idx = stories.findIndex((s) => s.id === donor.id);
+                    if (idx !== -1) setStoryIndex(idx);
                   }}
                   className="flex-shrink-0 focus:outline-none"
                   title="Ver mensagem"
@@ -184,16 +214,25 @@ export function DonorRanking({
                   >
                     <div className="bg-white p-0.5 rounded-full">
                       <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden flex items-center justify-center">
-                        <video
-                          src={donor.videoUrl!}
-                          className="w-full h-full object-cover"
-                          muted
-                          playsInline
-                          preload="metadata"
-                          onLoadedMetadata={(e) => {
-                            (e.currentTarget as HTMLVideoElement).currentTime = 0.5;
-                          }}
-                        />
+                        {hasVideo ? (
+                          <video
+                            src={donor.videoUrl!}
+                            className="w-full h-full object-cover"
+                            muted
+                            playsInline
+                            preload="metadata"
+                            onLoadedMetadata={(e) => {
+                              (e.currentTarget as HTMLVideoElement).currentTime = 0.5;
+                            }}
+                          />
+                        ) : (
+                          <div
+                            className="w-full h-full flex items-center justify-center text-white text-[9px] sm:text-[10px] font-semibold"
+                            style={{ background: primaryColor }}
+                          >
+                            {initials}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { formatCurrency, formatPhone } from "@/lib/utils";
-import { VideoModal } from "@/components/caixinha/VideoModal";
+import { VideoModal, type StoryItem } from "@/components/caixinha/VideoModal";
 import { Eye, Gift } from "lucide-react";
 
 const statusMap = {
@@ -46,29 +46,41 @@ export function DonationsList({
   coupleNames?: string;
   weddingDate?: string | null;
 }) {
-  const [videoIndex, setVideoIndex] = useState<number | null>(null);
+  const [storyIndex, setStoryIndex] = useState<number | null>(null);
 
   const visible = useMemo(
     () => [...donations].sort((a, b) => b.amount - a.amount),
     [donations],
   );
 
-  const videos = useMemo(
+  const stories: StoryItem[] = useMemo(
     () =>
       visible
-        .filter((d): d is Donation & { videoUrl: string } => !!d.videoUrl)
-        .map((d) => ({
-          id: d.id,
-          donorName: d.donorName,
-          amount: d.amount,
-          videoUrl: d.videoUrl,
-        })),
+        .filter((d) => !!d.videoUrl || (d.message && d.message.trim().length > 0))
+        .map((d): StoryItem => {
+          if (d.videoUrl) {
+            return {
+              id: d.id,
+              donorName: d.donorName,
+              amount: d.amount,
+              type: "video",
+              videoUrl: d.videoUrl,
+            };
+          }
+          return {
+            id: d.id,
+            donorName: d.donorName,
+            amount: d.amount,
+            type: "text",
+            message: d.message!.trim(),
+          };
+        }),
     [visible],
   );
 
-  function openVideo(donationId: string) {
-    const idx = videos.findIndex((v) => v.id === donationId);
-    if (idx !== -1) setVideoIndex(idx);
+  function openStory(donationId: string) {
+    const idx = stories.findIndex((s) => s.id === donationId);
+    if (idx !== -1) setStoryIndex(idx);
   }
 
   if (donations.length === 0) {
@@ -87,15 +99,15 @@ export function DonationsList({
 
   return (
     <>
-      {videoIndex !== null && (
+      {storyIndex !== null && (
         <VideoModal
-          videos={videos}
-          initialIndex={videoIndex}
+          videos={stories}
+          initialIndex={storyIndex}
           primaryColor={primaryColor}
           coupleNames={coupleNames}
           weddingDate={weddingDate}
           canDownload
-          onClose={() => setVideoIndex(null)}
+          onClose={() => setStoryIndex(null)}
         />
       )}
 
@@ -112,7 +124,7 @@ export function DonationsList({
                   <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider text-foreground/70">Método</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider text-foreground/70">Status</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider text-foreground/70">Data</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider text-foreground/70">Vídeo</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider text-foreground/70">Mensagem</th>
                   <th className="text-right px-5 py-3 text-xs font-semibold uppercase tracking-wider text-foreground/70">Valor</th>
                 </tr>
               </thead>
@@ -152,12 +164,21 @@ export function DonationsList({
                       <td className="px-5 py-4">
                         {donation.videoUrl ? (
                           <button
-                            onClick={() => openVideo(donation.id)}
+                            onClick={() => openStory(donation.id)}
                             className="inline-flex items-center gap-1.5 text-xs font-semibold hover:underline"
                             style={{ color: primaryColor }}
                           >
                             <Eye className="w-3.5 h-3.5" />
-                            Ver
+                            Ver vídeo
+                          </button>
+                        ) : donation.message ? (
+                          <button
+                            onClick={() => openStory(donation.id)}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold hover:underline"
+                            style={{ color: primaryColor }}
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            Ver texto
                           </button>
                         ) : (
                           <span className="text-xs text-foreground/35">—</span>
@@ -218,16 +239,25 @@ export function DonationsList({
                       })}
                     </span>
                   </div>
-                  {donation.videoUrl && (
+                  {donation.videoUrl ? (
                     <button
-                      onClick={() => openVideo(donation.id)}
+                      onClick={() => openStory(donation.id)}
                       className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold"
                       style={{ color: primaryColor }}
                     >
                       <Eye className="w-3.5 h-3.5" />
                       Ver vídeo
                     </button>
-                  )}
+                  ) : donation.message ? (
+                    <button
+                      onClick={() => openStory(donation.id)}
+                      className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold"
+                      style={{ color: primaryColor }}
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      Ver mensagem
+                    </button>
+                  ) : null}
                 </li>
               );
             })}

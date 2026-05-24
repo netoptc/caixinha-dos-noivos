@@ -9,20 +9,25 @@ import { z } from "zod";
 
 const MIN_DONATION = getMinDonationAmount();
 
-const donationSchema = z.object({
-  caixinhaId: z.string().cuid(),
-  donorName: z.string().min(2).max(200),
-  donorPhone: z.string().min(10).max(15),
-  amount: z
-    .number()
-    .positive()
-    .min(MIN_DONATION, `Valor mínimo: ${formatMinDonationAmount()}`),
-  message: z.string().max(500).optional(),
-  videoUrl: z.string().optional(),
-  photoUrl: z.string().optional(),
-  paymentMethod: z.enum(["PIX", "CREDIT_CARD"]),
-  installments: z.number().int().min(1).max(12).optional(),
-});
+const donationSchema = z
+  .object({
+    caixinhaId: z.string().cuid(),
+    donorName: z.string().min(2).max(200),
+    donorPhone: z.string().min(10).max(15),
+    amount: z
+      .number()
+      .positive()
+      .min(MIN_DONATION, `Valor mínimo: ${formatMinDonationAmount()}`),
+    message: z.string().trim().min(1).max(280).optional(),
+    videoUrl: z.string().optional(),
+    photoUrl: z.string().optional(),
+    paymentMethod: z.enum(["PIX", "CREDIT_CARD"]),
+    installments: z.number().int().min(1).max(12).optional(),
+  })
+  .refine((d) => !!d.message || !!d.videoUrl, {
+    message: "Mensagem obrigatória (texto ou vídeo).",
+    path: ["message"],
+  });
 
 export async function POST(req: NextRequest) {
   try {
