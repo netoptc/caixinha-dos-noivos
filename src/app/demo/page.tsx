@@ -14,11 +14,9 @@ import {
   ArrowRight,
   CreditCard,
   Zap,
-  Play,
 } from "lucide-react";
 import { DonorRanking } from "@/components/caixinha/DonorRanking";
 import { ArrecadacaoCard } from "@/components/caixinha/ArrecadacaoCard";
-import { VideoModal, type StoryItem } from "@/components/caixinha/VideoModal";
 
 const DEMO = {
   coupleNames: "Ana & Pedro",
@@ -32,6 +30,7 @@ const DEMO = {
   hideGoal: false,
   hideDonorAmount: false,
   donors: [
+    // Texto (todos com message, sem foto)
     { id: "1", donorName: "Roberto Alves", donorPhone: "11954321098", amount: 2000, message: "Para o casal mais lindo do mundo!", videoUrl: null, photoUrl: null, createdAt: new Date().toISOString() },
     { id: "2", donorName: "João Santos", donorPhone: "11976543210", amount: 1000, message: "Muito feliz por vocês!", videoUrl: null, photoUrl: null, createdAt: new Date().toISOString() },
     { id: "3", donorName: "Fernando Costa", donorPhone: "11932109876", amount: 750, message: "Felicidades a vocês dois!", videoUrl: null, photoUrl: null, createdAt: new Date().toISOString() },
@@ -42,51 +41,23 @@ const DEMO = {
     { id: "8", donorName: "Carla Oliveira", donorPhone: "11965432109", amount: 250, message: "Que Deus abençoe a união de vocês!", videoUrl: null, photoUrl: null, createdAt: new Date().toISOString() },
     { id: "9", donorName: "Eduardo Rocha", donorPhone: "11910987654", amount: 150, message: "Com muito amor!", videoUrl: null, photoUrl: null, createdAt: new Date().toISOString() },
     { id: "10", donorName: "Patricia Lima", donorPhone: "11943210987", amount: 100, message: null, videoUrl: null, photoUrl: null, createdAt: new Date().toISOString() },
+    // Foto (simulando vídeo — amounts escolhidos pra misturar com os textos no
+    // ranking ordenado por valor)
+    { id: "s1", donorName: "Tereza Mendes", donorPhone: "11900000001", amount: 1500, message: null, videoUrl: null, photoUrl: "/assets/imgs/tereza.png", createdAt: new Date().toISOString() },
+    { id: "s2", donorName: "Maria Souza", donorPhone: "11900000002", amount: 600, message: null, videoUrl: null, photoUrl: "/assets/imgs/maria.png", createdAt: new Date().toISOString() },
+    { id: "s3", donorName: "Fernando Lima", donorPhone: "11900000003", amount: 400, message: null, videoUrl: null, photoUrl: "/assets/imgs/fernando.png", createdAt: new Date().toISOString() },
+    { id: "s4", donorName: "Carla Almeida", donorPhone: "11900000004", amount: 200, message: null, videoUrl: null, photoUrl: "/assets/imgs/carla.png", createdAt: new Date().toISOString() },
+    { id: "s5", donorName: "Marcos Pereira", donorPhone: "11900000005", amount: 800, message: null, videoUrl: null, photoUrl: "/assets/imgs/marcos.png", createdAt: new Date().toISOString() },
   ],
 };
 
-// Stories simuladas — cada doador tem sua própria foto. Os amounts são
-// fictícios e servem só pra misturar os tiles (fotos + textos) por valor
-// no carrossel, como o DonorRanking real faria.
-const DEMO_STORIES = [
-  { id: "s1", donorName: "Tereza Mendes", photoUrl: "/assets/imgs/tereza.png", amount: 1500 },
-  { id: "s2", donorName: "Maria Souza", photoUrl: "/assets/imgs/maria.png", amount: 600 },
-  { id: "s3", donorName: "Fernando Lima", photoUrl: "/assets/imgs/fernando.png", amount: 400 },
-  { id: "s4", donorName: "Carla Almeida", photoUrl: "/assets/imgs/carla.png", amount: 200 },
-  { id: "s5", donorName: "Marcos Pereira", photoUrl: "/assets/imgs/marcos.png", amount: 800 },
-];
-
 export default function DemoPage() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [storyIndex, setStoryIndex] = useState<number | null>(null);
 
   const primary = DEMO.primaryColor;
   const raisedAmount = DEMO.raisedAmount;
   const goalAmount = DEMO.goalAmount;
   const donorCount = DEMO.donors.length;
-
-  // Array UNIFICADO de stories: 5 fotos (simulando video) + textos dos donors.
-  // Misturados POR VALOR (amount desc), igual o DonorRanking real faz na app —
-  // assim foto e texto se intercalam naturalmente no carrossel.
-  const photoStories: StoryItem[] = DEMO_STORIES.map((s) => ({
-    id: s.id,
-    donorName: s.donorName,
-    amount: s.amount,
-    type: "image" as const,
-    photoUrl: s.photoUrl,
-  }));
-  const textStories: StoryItem[] = DEMO.donors
-    .filter((d) => d.message && d.message.trim().length > 0)
-    .map((d) => ({
-      id: d.id,
-      donorName: d.donorName,
-      amount: d.amount,
-      type: "text" as const,
-      message: d.message!.trim(),
-    }));
-  const allStories: StoryItem[] = [...photoStories, ...textStories].sort(
-    (a, b) => b.amount - a.amount,
-  );
 
   return (
     <div
@@ -194,73 +165,13 @@ export default function DemoPage() {
             <h2 className="font-display text-xl sm:text-2xl">Quem contribuiu</h2>
           </div>
 
-          {/* Carrossel UNICO de mensagens — fotos (simulando video) e textos
-             misturados num so array. Indice unificado: clica em qualquer tile
-             e abre o VideoModal no mesmo conjunto de allStories. */}
-          <div className="mb-5">
-            <p className="text-[11px] font-semibold text-foreground/60 mb-3">
-              Mensagens
-            </p>
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-2 px-2 py-2">
-              {allStories.map((story, i) => (
-                <button
-                  key={story.id}
-                  type="button"
-                  onClick={() => setStoryIndex(i)}
-                  className="flex flex-col items-center gap-1.5 flex-shrink-0 group focus:outline-none"
-                >
-                  <div
-                    className="p-[2px] rounded-full transition-transform group-hover:scale-105"
-                    style={{ background: primary }}
-                  >
-                    <div className="bg-white p-[2px] rounded-full">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden flex items-center justify-center relative">
-                        {story.type === "image" && (
-                          <>
-                            <Image
-                              src={story.photoUrl}
-                              alt={story.donorName}
-                              fill
-                              className="object-cover"
-                              sizes="56px"
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                              <Play
-                                className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white drop-shadow"
-                                fill="currentColor"
-                              />
-                            </div>
-                          </>
-                        )}
-                        {story.type === "text" && (
-                          <div
-                            className="w-full h-full flex items-center justify-center text-center px-1.5 text-white font-medium leading-[1.1]"
-                            style={{
-                              background: primary,
-                              fontSize: "9px",
-                              fontFamily: "Georgia, serif",
-                            }}
-                          >
-                            <span className="line-clamp-3">{story.message}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-[11px] text-foreground/70 max-w-[56px] truncate text-center">
-                    {story.donorName.split(" ")[0]}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           <DonorRanking
             donors={DEMO.donors}
             primaryColor={primary}
             coupleNames={DEMO.coupleNames}
             showAmounts
-            hideMessagesCarousel
+            limit={15}
+            demoCta
           />
         </div>
 
@@ -287,18 +198,6 @@ export default function DemoPage() {
         </p>
       </div>
 
-      {/* UNIFIED STORIES MODAL — todos os tipos (foto + texto) com contador
-         unico (1 de N) e CTA de demonstracao em todos. */}
-      {storyIndex !== null && (
-        <VideoModal
-          videos={allStories}
-          initialIndex={storyIndex}
-          primaryColor={primary}
-          coupleNames={DEMO.coupleNames}
-          demoCta
-          onClose={() => setStoryIndex(null)}
-        />
-      )}
 
       {/* MODAL */}
       {modalOpen && (

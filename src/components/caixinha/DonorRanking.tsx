@@ -27,6 +27,9 @@ interface DonorRankingProps {
   /** Quando true, oculta o carrossel "Mensagens" no topo. Use quando o
    * container pai já renderiza um carrossel próprio (ex.: /demo). */
   hideMessagesCarousel?: boolean;
+  /** Quando true, o VideoModal aberto pelo ranking exibe o overlay de
+   * demonstração (badge + CTA "Criar minha caixinha"). Use só na /demo. */
+  demoCta?: boolean;
 }
 
 export function DonorRanking({
@@ -37,6 +40,7 @@ export function DonorRanking({
   limit = 10,
   showAmounts = true,
   hideMessagesCarousel = false,
+  demoCta = false,
 }: DonorRankingProps) {
   const [storyIndex, setStoryIndex] = useState<number | null>(null);
 
@@ -44,9 +48,17 @@ export function DonorRanking({
     .sort((a, b) => b.amount - a.amount)
     .slice(0, limit);
 
-  // Doadores com vídeo OU mensagem de texto aparecem no carrossel de stories.
+  // Doadores com vídeo, foto OU mensagem de texto aparecem no carrossel.
+  // Prioridade na construção da story: vídeo > foto > texto. Um doador só vira
+  // um único tile (uma story por doador). Misturados naturalmente por amount
+  // desc (vem do sortedDonors).
   const stories: StoryItem[] = sortedDonors
-    .filter((d) => !!d.videoUrl || (d.message && d.message.trim().length > 0))
+    .filter(
+      (d) =>
+        !!d.videoUrl ||
+        !!d.photoUrl ||
+        (d.message && d.message.trim().length > 0),
+    )
     .map((d): StoryItem => {
       if (d.videoUrl) {
         return {
@@ -55,6 +67,15 @@ export function DonorRanking({
           amount: d.amount,
           type: "video",
           videoUrl: d.videoUrl,
+        };
+      }
+      if (d.photoUrl) {
+        return {
+          id: d.id,
+          donorName: d.donorName,
+          amount: d.amount,
+          type: "image",
+          photoUrl: d.photoUrl,
         };
       }
       return {
@@ -97,6 +118,7 @@ export function DonorRanking({
           primaryColor={primaryColor}
           coupleNames={coupleNames}
           weddingDate={weddingDate}
+          demoCta={demoCta}
           onClose={() => setStoryIndex(null)}
         />
       )}
@@ -132,6 +154,14 @@ export function DonorRanking({
                           }}
                         />
                       )}
+                      {story.type === "image" && (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={story.photoUrl}
+                          alt={story.donorName}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
                       {story.type === "text" && (
                         <div
                           className="w-full h-full flex items-center justify-center text-center px-1.5 text-white font-medium leading-[1.1]"
@@ -163,9 +193,13 @@ export function DonorRanking({
         {sortedDonors.map((donor, index) => {
           const isTop3 = index < 3;
           const hasVideo = !!donor.videoUrl;
+          const hasPhoto = !hasVideo && !!donor.photoUrl;
           const hasText =
-            !hasVideo && !!donor.message && donor.message.trim().length > 0;
-          const hasStory = hasVideo || hasText;
+            !hasVideo &&
+            !hasPhoto &&
+            !!donor.message &&
+            donor.message.trim().length > 0;
+          const hasStory = hasVideo || hasPhoto || hasText;
           const initials = getInitials(donor.donorName);
 
           return (
@@ -219,7 +253,7 @@ export function DonorRanking({
                   >
                     <div className="bg-white p-0.5 rounded-full">
                       <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden flex items-center justify-center">
-                        {hasVideo ? (
+                        {hasVideo && (
                           <video
                             src={donor.videoUrl!}
                             className="w-full h-full object-cover"
@@ -230,7 +264,16 @@ export function DonorRanking({
                               (e.currentTarget as HTMLVideoElement).currentTime = 0.5;
                             }}
                           />
-                        ) : (
+                        )}
+                        {hasPhoto && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={donor.photoUrl!}
+                            alt={donor.donorName}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        {hasText && (
                           <div
                             className="w-full h-full flex items-center justify-center text-white text-[9px] sm:text-[10px] font-semibold"
                             style={{ background: primaryColor }}
