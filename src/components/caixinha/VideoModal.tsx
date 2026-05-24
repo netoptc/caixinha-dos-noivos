@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
-import { X, ChevronLeft, ChevronRight, Play, Heart, Download, Volume2, VolumeX, ArrowRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Play, Heart, Download, ArrowRight } from "lucide-react";
 import { formatWeddingDate } from "@/lib/utils";
 
 export type StoryItem =
@@ -66,7 +66,6 @@ export function VideoModal({
   const [paused, setPaused] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [downloadLoading, setDownloadLoading] = useState(false);
-  const [muted, setMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const pausedRef = useRef(false);
   useEffect(() => {
@@ -196,9 +195,17 @@ export function VideoModal({
 
     const startPlayback = () => {
       if (cancelled) return;
-      video.muted = true;
+      // Áudio sempre ativo. Browsers (Chrome/Safari) bloqueiam autoplay
+      // com som sem gesto do usuário, então o play() pode rejeitar com
+      // NotAllowedError. Nesse caso, mostramos o overlay de Play —
+      // o clique do usuário ali libera o som via gesto direto.
+      video.muted = false;
       const p = video.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
+      if (p && typeof p.catch === "function") {
+        p.catch(() => {
+          if (!cancelled) setPaused(true);
+        });
+      }
       rafId = requestAnimationFrame(tick);
     };
 
@@ -284,19 +291,6 @@ export function VideoModal({
     };
   }, [index, goNext, current]);
 
-  function toggleMute(e: React.MouseEvent) {
-    e.stopPropagation();
-    const video = videoRef.current;
-    if (!video) return;
-    const next = !muted;
-    video.muted = next;
-    setMuted(next);
-    if (!next && video.paused) {
-      video.play().catch(() => {});
-      setPaused(false);
-    }
-  }
-
   async function handleDownload(e?: React.MouseEvent) {
     e?.stopPropagation();
     if (downloadLoading) return;
@@ -331,7 +325,11 @@ export function VideoModal({
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
-      video.play();
+      // Gesto direto do usuário — libera áudio caso o autoplay tenha
+      // sido bloqueado pelo browser.
+      video.muted = false;
+      const p = video.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
       setPaused(false);
     } else {
       video.pause();
@@ -412,16 +410,6 @@ export function VideoModal({
               {index + 1} de {videos.length}
             </span>
             <div className="flex items-center gap-1">
-              {current.type === "video" && (
-                <button
-                  onClick={toggleMute}
-                  className="w-9 h-9 flex items-center justify-center text-white/80 hover:text-white rounded-full hover:bg-white/15 transition-colors"
-                  aria-label={muted ? "Ativar som" : "Desativar som"}
-                  title={muted ? "Ativar som" : "Desativar som"}
-                >
-                  {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                </button>
-              )}
               {canDownload && current.type === "video" && (
                 <button
                   onClick={handleDownload}
@@ -493,7 +481,7 @@ export function VideoModal({
                 className="w-full h-full object-cover cursor-pointer"
                 preload="auto"
                 playsInline
-                muted={muted}
+                muted={false}
                 onClick={togglePause}
               />
             )}
