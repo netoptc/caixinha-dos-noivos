@@ -498,7 +498,7 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
 
           <Field
             label="Seu nome"
-            placeholder="Como vai aparecer no ranking"
+            placeholder="Digite seu nome"
             value={donorName}
             onChange={setDonorName}
             error={errors.name}
