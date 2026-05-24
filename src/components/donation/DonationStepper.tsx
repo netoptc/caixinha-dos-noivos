@@ -144,6 +144,21 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
   const finalAmount = amount ?? (customAmount ? parseFloat(customAmount) : 0);
   const { primaryColor } = caixinha;
 
+  // Invalida a doacao pendente quando dados-chave mudam — forca recriar uma
+  // nova doacao com os valores atualizados no proximo createDonationAndProceed.
+  // Sem isso, voltar do QR/cartao, mudar o valor (ou outro campo) e re-confirmar
+  // reaproveitaria a doacao antiga, gerando cobranca com o valor errado.
+  useEffect(() => {
+    setDonationId((prev) => {
+      if (prev !== null) {
+        setPaymentMethod(null);
+        setDonationTotal(0);
+      }
+      return null;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finalAmount, donorName, donorPhone, videoUrl, textMessage, messageMode]);
+
   function validateStep1() {
     if (!finalAmount || finalAmount < MIN_DONATION) {
       setErrors({ amount: `Valor mínimo: ${MIN_DONATION_LABEL}` });
