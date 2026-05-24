@@ -175,6 +175,7 @@ export async function POST(req: NextRequest) {
         pixAddressKey: normalizedPixKey,
         pixAddressKeyType: pixKeyType,
         description: `Repasse caixinha ${user.name}`,
+        externalReference: withdrawal.id,
       });
 
       const completed = transfer.status === "DONE" ? new Date() : null;

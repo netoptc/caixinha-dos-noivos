@@ -130,6 +130,9 @@ export interface AsaasCreateTransferInput {
   pixAddressKey: string;
   pixAddressKeyType: AsaasPixKeyType;
   description?: string;
+  /** Referência opcional propagada pro webhook de validação de saque,
+   * permitindo o app casar a transferência com o Withdrawal local. */
+  externalReference?: string;
 }
 
 export interface AsaasTransfer {
