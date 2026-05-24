@@ -1,4 +1,4 @@
-const DEFAULT_MIN_DONATION = 10;
+const DEFAULT_MIN_DONATION = 5;
 const DEFAULT_MIN_INSTALLMENT = 5;
 
 function parsePositive(raw: string | undefined, fallback: number): number {
