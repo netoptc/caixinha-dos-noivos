@@ -16,6 +16,13 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# NEXT_PUBLIC_* sao inlined no bundle pelo `next build`. Defaults para builds
+# locais; sobrescritos via --build-arg no CI (ver .github/workflows/deploy.yml).
+ARG NEXT_PUBLIC_MIN_DONATION_AMOUNT=10
+ARG NEXT_PUBLIC_MIN_INSTALLMENT_VALUE=5
+ENV NEXT_PUBLIC_MIN_DONATION_AMOUNT=$NEXT_PUBLIC_MIN_DONATION_AMOUNT
+ENV NEXT_PUBLIC_MIN_INSTALLMENT_VALUE=$NEXT_PUBLIC_MIN_INSTALLMENT_VALUE
+
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npx prisma generate

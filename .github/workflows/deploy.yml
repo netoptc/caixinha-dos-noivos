@@ -19,6 +19,7 @@ jobs:
     name: Build e push para GHCR
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    environment: production
     permissions:
       contents: read
       packages: write
@@ -52,6 +53,9 @@ jobs:
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+          build-args: |
+            NEXT_PUBLIC_MIN_DONATION_AMOUNT=${{ secrets.NEXT_PUBLIC_MIN_DONATION_AMOUNT || '10' }}
+            NEXT_PUBLIC_MIN_INSTALLMENT_VALUE=${{ secrets.NEXT_PUBLIC_MIN_INSTALLMENT_VALUE || '5' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -71,8 +75,8 @@ jobs:
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
           NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-          NEXT_PUBLIC_MIN_DONATION_AMOUNT: ${{ vars.NEXT_PUBLIC_MIN_DONATION_AMOUNT || '10' }}
-          NEXT_PUBLIC_MIN_INSTALLMENT_VALUE: ${{ vars.NEXT_PUBLIC_MIN_INSTALLMENT_VALUE || '5' }}
+          NEXT_PUBLIC_MIN_DONATION_AMOUNT: ${{ secrets.NEXT_PUBLIC_MIN_DONATION_AMOUNT || '10' }}
+          NEXT_PUBLIC_MIN_INSTALLMENT_VALUE: ${{ secrets.NEXT_PUBLIC_MIN_INSTALLMENT_VALUE || '5' }}
           PLATFORM_FEE_PIX: ${{ secrets.PLATFORM_FEE_PIX }}
           PLATFORM_FEE_CREDIT_CARD: ${{ secrets.PLATFORM_FEE_CREDIT_CARD }}
           ASAAS_ENV: ${{ secrets.ASAAS_ENV }}
