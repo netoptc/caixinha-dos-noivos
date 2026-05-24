@@ -91,7 +91,7 @@ export function DonorRanking({
           <p className="text-[11px] font-semibold text-foreground/60 mb-3">
             Mensagens
           </p>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+          <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-2 px-2 py-2">
             {videos.map((video, i) => (
               <button
                 key={video.id}
