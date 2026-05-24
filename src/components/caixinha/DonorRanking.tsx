@@ -24,6 +24,9 @@ interface DonorRankingProps {
   limit?: number;
   /** Quando false, esconde o valor da doação ao lado de cada doador */
   showAmounts?: boolean;
+  /** Quando true, oculta o carrossel "Mensagens" no topo. Use quando o
+   * container pai já renderiza um carrossel próprio (ex.: /demo). */
+  hideMessagesCarousel?: boolean;
 }
 
 export function DonorRanking({
@@ -33,6 +36,7 @@ export function DonorRanking({
   weddingDate,
   limit = 10,
   showAmounts = true,
+  hideMessagesCarousel = false,
 }: DonorRankingProps) {
   const [storyIndex, setStoryIndex] = useState<number | null>(null);
 
@@ -98,7 +102,7 @@ export function DonorRanking({
       )}
 
       {/* Carrossel de mensagens */}
-      {stories.length > 0 && (
+      {!hideMessagesCarousel && stories.length > 0 && (
         <div className="mb-5">
           <p className="text-[11px] font-semibold text-foreground/60 mb-3">
             Mensagens
@@ -131,7 +135,7 @@ export function DonorRanking({
                         <div
                           className="w-full h-full flex items-center justify-center text-center px-1.5 text-white font-medium leading-[1.1]"
                           style={{
-                            background: `linear-gradient(155deg, ${primaryColor} 0%, ${primaryColor}cc 100%)`,
+                            background: primaryColor,
                             fontSize: "9px",
                             fontFamily: "Georgia, serif",
                           }}

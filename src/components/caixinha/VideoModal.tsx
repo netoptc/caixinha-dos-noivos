@@ -584,7 +584,9 @@ function TextStory({
       onClick={onClick}
       className="w-full h-full cursor-pointer flex items-center justify-center px-6 py-8 relative"
       style={{
-        background: `linear-gradient(155deg, ${primaryColor} 0%, ${primaryColor}cc 55%, ${primaryColor}99 100%)`,
+        // cor sólida (sem alpha) — assim o fundo do modal de texto não revela
+        // o gradient ambiente atrás e fica visualmente igual ao do vídeo cheio
+        background: primaryColor,
       }}
     >
       <div
