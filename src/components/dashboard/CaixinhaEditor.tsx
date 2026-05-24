@@ -438,27 +438,40 @@ export function CaixinhaEditor() {
 
             {form.coupleImageUrl ? (
               <div className="flex items-center gap-5 p-4 rounded-xl bg-[#fbf7ee] border border-border/60">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={form.coupleImageUrl}
-                  alt="Foto do casal"
-                  className="w-24 h-24 rounded-full object-cover flex-shrink-0"
-                  style={{ border: `2px solid ${PLATFORM_PRIMARY}` }}
-                />
+                <div className="relative w-24 h-24 flex-shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={form.coupleImageUrl}
+                    alt="Foto do casal"
+                    className="w-24 h-24 rounded-full object-cover"
+                    style={{ border: `2px solid ${PLATFORM_PRIMARY}` }}
+                  />
+                  {uploadingImage && (
+                    <div className="absolute inset-0 rounded-full bg-black/45 backdrop-blur-[1px] flex items-center justify-center">
+                      <Loader2 className="w-7 h-7 animate-spin text-white" />
+                    </div>
+                  )}
+                </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground mb-1">
-                    Foto carregada
+                    {uploadingImage ? "Enviando nova foto…" : "Foto carregada"}
                   </p>
                   <p className="text-xs text-foreground/60 mb-3">
-                    Sua foto está pronta para a página.
+                    {uploadingImage
+                      ? "Aguarde enquanto sua imagem é processada."
+                      : "Sua foto está pronta para a página."}
                   </p>
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="text-sm font-semibold transition-colors hover:opacity-80"
+                    disabled={uploadingImage}
+                    className="text-sm font-semibold transition-colors hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
                     style={{ color: PLATFORM_PRIMARY }}
                   >
-                    Trocar foto
+                    {uploadingImage && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    )}
+                    {uploadingImage ? "Enviando…" : "Trocar foto"}
                   </button>
                 </div>
               </div>

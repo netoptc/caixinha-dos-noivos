@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { formatMinDonationAmount } from "@/lib/donation-limits";
+
+const MIN_DONATION_LABEL = formatMinDonationAmount();
 
 export const metadata: Metadata = {
   title: "Central de ajuda",
@@ -52,7 +55,7 @@ const categories = [
       },
       {
         q: "Qual o valor mínimo de uma doação?",
-        a: "R$ 10,00. Não há valor máximo — o convidado pode contribuir com o que quiser.",
+        a: `${MIN_DONATION_LABEL}. Não há valor máximo — o convidado pode contribuir com o que quiser.`,
       },
       {
         q: "O convidado precisa criar uma conta pra doar?",

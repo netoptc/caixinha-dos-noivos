@@ -14,9 +14,11 @@ import {
   ArrowRight,
   CreditCard,
   Zap,
+  Play,
 } from "lucide-react";
 import { DonorRanking } from "@/components/caixinha/DonorRanking";
 import { ArrecadacaoCard } from "@/components/caixinha/ArrecadacaoCard";
+import { DemoStoriesModal } from "@/components/demo/DemoStoriesModal";
 
 const DEMO = {
   coupleNames: "Ana & Pedro",
@@ -43,8 +45,19 @@ const DEMO = {
   ],
 };
 
+// Stories simuladas — usam a foto do casal como placeholder. O detalhe é que
+// no modal aparece um CTA gigante "Criar minha caixinha" sobre a foto.
+const DEMO_STORIES = [
+  { id: "s1", donorName: "Roberto Alves", photoUrl: DEMO.coupleImageUrl },
+  { id: "s2", donorName: "Maria Silva", photoUrl: DEMO.coupleImageUrl },
+  { id: "s3", donorName: "Fernando Costa", photoUrl: DEMO.coupleImageUrl },
+  { id: "s4", donorName: "Carla Oliveira", photoUrl: DEMO.coupleImageUrl },
+  { id: "s5", donorName: "Marcos Ferreira", photoUrl: DEMO.coupleImageUrl },
+];
+
 export default function DemoPage() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [storyIndex, setStoryIndex] = useState<number | null>(null);
 
   const primary = DEMO.primaryColor;
   const raisedAmount = DEMO.raisedAmount;
@@ -61,8 +74,8 @@ export default function DemoPage() {
       }
     >
       {/* Selo "demonstração" */}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-30 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-foreground/85 text-white text-[11px] font-semibold uppercase tracking-wider backdrop-blur-md shadow-lg">
-        <Sparkles className="w-3 h-3" />
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-30 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-foreground/85 text-white text-[11px] font-semibold uppercase tracking-wider backdrop-blur-md shadow-lg whitespace-nowrap">
+        <Sparkles className="w-3 h-3 flex-shrink-0" />
         Página de demonstração
       </div>
 
@@ -156,6 +169,53 @@ export default function DemoPage() {
             <Users className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primary }} />
             <h2 className="font-display text-xl sm:text-2xl">Quem contribuiu</h2>
           </div>
+
+          {/* Carrossel de stories — visualmente idêntico ao DonorRanking real.
+             Cada tile usa <img> com play overlay para passar a sensação de
+             vídeo. Ao clicar, abre o DemoStoriesModal (cópia do VideoModal
+             com CTA central). */}
+          <div className="mb-5">
+            <p className="text-[11px] font-semibold text-foreground/60 mb-3">
+              Mensagens
+            </p>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+              {DEMO_STORIES.map((story, i) => (
+                <button
+                  key={story.id}
+                  type="button"
+                  onClick={() => setStoryIndex(i)}
+                  className="flex flex-col items-center gap-1.5 flex-shrink-0 group focus:outline-none"
+                >
+                  <div
+                    className="p-[2px] rounded-full transition-transform group-hover:scale-105"
+                    style={{ background: primary }}
+                  >
+                    <div className="bg-white p-[2px] rounded-full">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden flex items-center justify-center relative">
+                        <Image
+                          src={story.photoUrl}
+                          alt={story.donorName}
+                          fill
+                          className="object-cover"
+                          sizes="56px"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                          <Play
+                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white drop-shadow"
+                            fill="currentColor"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[11px] text-foreground/70 max-w-[56px] truncate text-center">
+                    {story.donorName.split(" ")[0]}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <DonorRanking
             donors={DEMO.donors}
             primaryColor={primary}
@@ -186,6 +246,17 @@ export default function DemoPage() {
           Feito com Caixinha dos Noivos
         </p>
       </div>
+
+      {/* STORIES MODAL — abre quando clica em qualquer tile da carrossel */}
+      {storyIndex !== null && (
+        <DemoStoriesModal
+          stories={DEMO_STORIES}
+          initialIndex={storyIndex}
+          primaryColor={primary}
+          coupleNames={DEMO.coupleNames}
+          onClose={() => setStoryIndex(null)}
+        />
+      )}
 
       {/* MODAL */}
       {modalOpen && (

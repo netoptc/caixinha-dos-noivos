@@ -28,6 +28,13 @@ import { PaymentPix } from "./PaymentPix";
 import { PaymentCard } from "./PaymentCard";
 import { MediaCapture } from "./MediaCapture";
 import { formatCurrency, maskPhone } from "@/lib/utils";
+import {
+  formatMinDonationAmount,
+  getMinDonationAmount,
+} from "@/lib/donation-limits";
+
+const MIN_DONATION = getMinDonationAmount();
+const MIN_DONATION_LABEL = formatMinDonationAmount();
 import { StepIndicator } from "@/components/ui/StepIndicator";
 
 interface CaixinhaInfo {
@@ -131,8 +138,8 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
   const { primaryColor } = caixinha;
 
   function validateStep1() {
-    if (!finalAmount || finalAmount < 5) {
-      setErrors({ amount: "Valor mínimo: R$ 5,00" });
+    if (!finalAmount || finalAmount < MIN_DONATION) {
+      setErrors({ amount: `Valor mínimo: ${MIN_DONATION_LABEL}` });
       return false;
     }
     setErrors({});
@@ -341,7 +348,7 @@ export function DonationStepper({ caixinha }: DonationStepperProps) {
                 </span>
                 <input
                   type="number"
-                  min="5"
+                  min={MIN_DONATION}
                   step="0.01"
                   placeholder="0,00"
                   autoFocus

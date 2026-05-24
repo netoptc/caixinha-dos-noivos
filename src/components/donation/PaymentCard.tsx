@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-
-const MIN_INSTALLMENT_VALUE = 5; // Asaas requires R$ 5,00 minimum per parcel
 import { CreditCard, Lock, Loader2, AlertCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { getMinInstallmentValue } from "@/lib/donation-limits";
 import { PaymentSummary } from "./PaymentSummary";
+
+const MIN_INSTALLMENT_VALUE = getMinInstallmentValue();
 
 interface GatewayFees {
   pixFixed: number;

@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { calculateFee, type PaymentMethod } from "@/lib/fees";
+import {
+  formatMinDonationAmount,
+  getMinDonationAmount,
+} from "@/lib/donation-limits";
 import { z } from "zod";
+
+const MIN_DONATION = getMinDonationAmount();
 
 const donationSchema = z.object({
   caixinhaId: z.string().cuid(),
   donorName: z.string().min(2).max(200),
   donorPhone: z.string().min(10).max(15),
-  amount: z.number().positive().min(5, "Valor mínimo: R$ 5,00"),
+  amount: z
+    .number()
+    .positive()
+    .min(MIN_DONATION, `Valor mínimo: ${formatMinDonationAmount()}`),
   message: z.string().max(500).optional(),
   videoUrl: z.string().optional(),
   photoUrl: z.string().optional(),
