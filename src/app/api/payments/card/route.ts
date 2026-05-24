@@ -105,6 +105,7 @@ export async function POST(req: NextRequest) {
       dueDate,
       description: `Caixinha ${donation.caixinha.coupleNames}`,
       externalReference: donation.id,
+      notificationDisabled: true,
       installmentCount: installments > 1 ? installments : undefined,
       installmentValue:
         installments > 1

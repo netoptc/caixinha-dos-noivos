@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
       dueDate,
       description: `Caixinha ${donation.caixinha.coupleNames}`,
       externalReference: donation.id,
+      notificationDisabled: true,
     });
 
     // 3) Fetch the QR Code

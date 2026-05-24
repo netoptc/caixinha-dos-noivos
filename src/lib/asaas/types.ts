@@ -69,6 +69,7 @@ export interface AsaasCreatePaymentInput {
   creditCardToken?: string;
   remoteIp?: string;
   split?: AsaasSplit[];
+  notificationDisabled?: boolean;
 }
 
 export interface AsaasPayment {
