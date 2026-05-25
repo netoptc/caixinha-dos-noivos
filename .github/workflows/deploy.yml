@@ -23,8 +23,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    outputs:
-      image_tag: ${{ steps.meta.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
 
@@ -36,10 +34,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Compute image tag
-        id: meta
-        run: echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
-
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -48,7 +42,7 @@ jobs:
           platforms: linux/amd64
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -153,7 +147,7 @@ jobs:
             set -euo pipefail
             cd /var/caixinha/app
 
-            export APP_IMAGE="ghcr.io/${{ github.repository }}:${{ needs.build-and-push.outputs.image_tag }}"
+            export APP_IMAGE="ghcr.io/${{ github.repository }}:${{ github.sha }}"
             echo "Deploying $APP_IMAGE"
 
             # --env-file: compose le .env por default; aqui forcamos .env.production
