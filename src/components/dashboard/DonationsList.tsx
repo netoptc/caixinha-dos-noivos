@@ -184,9 +184,9 @@ export function DonationsList({
                           <span className="text-xs text-foreground/35">—</span>
                         )}
                       </td>
-                      <td className="px-5 py-4 text-right">
+                      <td className="px-5 py-4 text-right whitespace-nowrap">
                         <div
-                          className="text-base font-semibold tabular-nums"
+                          className="text-base font-semibold tabular-nums whitespace-nowrap"
                           style={{ color: primaryColor }}
                         >
                           {formatCurrency(donation.amount)}
