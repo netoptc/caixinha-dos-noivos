@@ -110,6 +110,13 @@ export function VideoModal({
   }, [onClose, goNext, goPrev]);
 
   useEffect(() => {
+    // Espera o portal montar — antes disso o JSX inteiro retorna null
+    // (linha do `if (!mounted) return null`) e o videoRef.current é null,
+    // o que fazia o efeito sair cedo e nunca anexar listeners de progresso
+    // nem chamar play(). Sintoma: video abria pausado, sem overlay de Play,
+    // e a barra de progresso ficava congelada mesmo o video tocando.
+    if (!mounted) return;
+
     setProgress(0);
     setPaused(false);
 
@@ -289,7 +296,7 @@ export function VideoModal({
       video.removeEventListener("loadedmetadata", handleLoadedMeta);
       video.removeEventListener("ended", handleEnded);
     };
-  }, [index, goNext, current]);
+  }, [index, goNext, current, mounted]);
 
   async function handleDownload(e?: React.MouseEvent) {
     e?.stopPropagation();
