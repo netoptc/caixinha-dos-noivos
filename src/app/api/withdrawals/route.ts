@@ -113,9 +113,9 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Anticipate every eligible card payment for this couple. The Asaas
-      // API charges a per-payment fee; we sum all fees and bill them to the
-      // couple via Withdrawal.anticipationFee so the platform stays neutral.
+      // Solicita antecipação no Asaas pra cada cartão elegível. A taxa por
+      // pagamento é cobrada do casal quando o saldo cair (refletida na fee
+      // do payment ao virar RECEIVED).
       for (const paymentId of balance.anticipatablePaymentIds) {
         const sim = await simulateAnticipation(paymentId);
         await createAnticipation(paymentId);
@@ -123,19 +123,28 @@ export async function POST(req: NextRequest) {
         anticipatedPaymentIds.push(paymentId);
       }
 
-      // Mark anticipated donations as liquidated from the couple's perspective:
-      // funds will arrive on the master account in ~D+2 and we already
-      // committed to release them to the couple now.
-      await prisma.donation.updateMany({
-        where: { asaasPaymentId: { in: anticipatedPaymentIds } },
-        data: { creditDate: new Date() },
+      // IMPORTANTE: a antecipação no Asaas é PENDING — leva até 2 dias úteis
+      // pra aprovar e cair o saldo na conta master. Não criamos Withdrawal
+      // nem chamamos createTransfer aqui: sem saldo real, o transfer falha
+      // com "Saldo insuficiente". O webhook RECEIVABLE_ANTICIPATION_CREDITED
+      // atualiza o creditDate da donation quando o $ cair de fato — daí o
+      // casal volta no painel e solicita o saque normalmente.
+      return NextResponse.json({
+        success: true,
+        anticipation: {
+          requested: true,
+          payments: anticipatedPaymentIds.length,
+          fee: anticipationFee,
+        },
+        message:
+          "Antecipação solicitada. O saldo fica disponível em até 2 dias úteis. " +
+          "Você receberá um aviso quando puder sacar.",
       });
     }
 
     const refreshedBalance = await getCoupleBalance(user.id);
-    // Withdrawal amount = available balance minus the anticipation fee we
-    // need to retain (since the fee is the couple's cost, not the platform's).
-    const maxNet = Math.max(0, refreshedBalance.available - anticipationFee);
+    // Saque normal (sem antecipação): saldo já disponível.
+    const maxNet = Math.max(0, refreshedBalance.available);
 
     const targetAmount =
       requestedAmount != null ? requestedAmount : maxNet;

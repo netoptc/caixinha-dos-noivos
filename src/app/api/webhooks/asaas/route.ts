@@ -74,23 +74,36 @@ async function handlePaymentEvent(payload: AsaasWebhookPayload) {
   }
 
   if (CONFIRMED_EVENTS.has(payload.event)) {
+    const newCreditDate = p.creditDate ? new Date(p.creditDate) : null;
+
     // Idempotência: o filtro `paymentStatus: "PENDING"` no updateMany é
     // reavaliado pelo Postgres dentro do row lock, então só uma execução
-    // concorrente consegue count = 1 e dispara o incremento.
-    const creditDate = p.creditDate ? new Date(p.creditDate) : null;
+    // concorrente consegue count = 1 e dispara o incremento da caixinha.
     const updated = await prisma.donation.updateMany({
       where: { id: donation.id, paymentStatus: "PENDING" },
       data: {
         paymentStatus: "CONFIRMED",
         asaasPaymentId: p.id,
         paymentId: p.id,
-        creditDate,
+        creditDate: newCreditDate,
       },
     });
     if (updated.count === 1) {
       await prisma.caixinha.update({
         where: { id: donation.caixinhaId },
         data: { raisedAmount: { increment: donation.amount } },
+      });
+      return;
+    }
+
+    // Caso ja estivesse CONFIRMED (ex.: PAYMENT_RECEIVED depois de
+    // PAYMENT_CONFIRMED, ou antecipação aprovada que adianta o creditDate):
+    // só sincroniza o creditDate pra o saldo disponivel refletir a data real
+    // de credito. Nao mexe em raisedAmount (que ja foi incrementado).
+    if (newCreditDate) {
+      await prisma.donation.update({
+        where: { id: donation.id },
+        data: { creditDate: newCreditDate },
       });
     }
     return;
