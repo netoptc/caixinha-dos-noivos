@@ -3,6 +3,7 @@ import { Fraunces, Manrope, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "@/lib/auth";
+import { ClarityScript } from "@/components/analytics/ClarityScript";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -58,6 +59,7 @@ export default async function RootLayout({
       className={`${fraunces.variable} ${manrope.variable} ${cormorant.variable}`}
     >
       <body className="font-sans antialiased">
+        <ClarityScript />
         <SessionProvider session={session}>{children}</SessionProvider>
       </body>
     </html>
